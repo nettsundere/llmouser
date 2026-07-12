@@ -1,0 +1,27 @@
+{
+  "name": "llmouser",
+  "version": "0.1.0",
+  "description": "Electron browser that generates websites with an LLM instead of real HTTP",
+  "main": "out/main/index.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test:e2e": "electron-vite build && playwright test",
+    "test:e2e:coverage": "cross-env COVERAGE=1 electron-vite build && cross-env COVERAGE=1 playwright test"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.2",
+    "cross-env": "^7.0.3",
+    "electron": "^43.1.0",
+    "electron-vite": "^5.0.0",
+    "monocart-coverage-reports": "^2.11.0",
+    "typescript": "^5.6.2",
+    "vite": "^7.3.6"
+  }
+}

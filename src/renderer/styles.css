@@ -1,0 +1,179 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+#chrome {
+  border-bottom: 1px solid #ccc;
+  background: #f4f4f5;
+}
+
+#tab-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 8px 0;
+  background: #e4e4e7;
+  overflow-x: auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: #d4d4d8;
+  cursor: pointer;
+  max-width: 200px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.tab.active {
+  background: #f4f4f5;
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#new-tab-button {
+  flex: none;
+  border: none;
+  background: none;
+  font-size: 18px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+#address-form,
+#status {
+  margin: 0 8px;
+}
+
+#address-form {
+  margin-top: 8px;
+}
+
+#status {
+  margin-bottom: 6px;
+}
+
+#address-form {
+  display: flex;
+  gap: 8px;
+}
+
+#address-bar {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+button {
+  padding: 8px 14px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eee;
+}
+
+#status {
+  min-height: 18px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #555;
+}
+
+#status.error {
+  color: #c0392b;
+}
+
+#settings-panel {
+  padding: 16px;
+  border-bottom: 1px solid #ccc;
+  background: #fafafa;
+}
+
+#settings-form {
+  display: grid;
+  gap: 10px;
+  max-width: 480px;
+}
+
+#settings-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+#settings-form input,
+#settings-form select,
+#settings-form textarea {
+  padding: 6px 8px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font: inherit;
+}
+
+#settings-form textarea {
+  resize: vertical;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
+}
+
+#viewport {
+  flex: 1;
+  min-height: 0;
+}
+
+.site-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.site-frame[hidden] {
+  display: none;
+}

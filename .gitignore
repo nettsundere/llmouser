@@ -1,0 +1,15 @@
+node_modules/
+out/
+dist/
+coverage/
+.coverage-raw/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+
+# Never commit secrets or local settings stores
+.env
+.env.*
+*.local
+llm-browser-settings.json

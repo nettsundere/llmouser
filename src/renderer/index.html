@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLM Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header id="chrome">
+      <div id="tab-bar" data-testid="tab-bar">
+        <button id="new-tab-button" data-testid="new-tab-button" type="button" title="New tab">
+          +
+        </button>
+      </div>
+      <form id="address-form" autocomplete="off">
+        <input
+          id="address-bar"
+          data-testid="address-bar"
+          type="text"
+          placeholder="Type an address, e.g. example.com"
+          aria-label="Address bar"
+        />
+        <button id="go-button" data-testid="go-button" type="submit">Go</button>
+        <button id="settings-button" data-testid="settings-button" type="button">Settings</button>
+      </form>
+      <div id="status" data-testid="status" role="status"></div>
+    </header>
+
+    <section id="settings-panel" data-testid="settings-panel" hidden>
+      <h2>LLM Settings</h2>
+      <form id="settings-form">
+        <label>
+          Provider
+          <select id="settings-provider" data-testid="settings-provider">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+        </label>
+        <label>
+          Endpoint
+          <input id="settings-endpoint" data-testid="settings-endpoint" type="text" />
+        </label>
+        <label>
+          Model
+          <input id="settings-model" data-testid="settings-model" type="text" />
+        </label>
+        <label>
+          API Key
+          <input id="settings-apikey" data-testid="settings-apikey" type="password" />
+        </label>
+        <label>
+          Universe rules
+          <textarea
+            id="settings-universe"
+            data-testid="settings-universe"
+            rows="3"
+            placeholder="Describe the universe all websites exist in"
+          ></textarea>
+        </label>
+        <div class="settings-actions">
+          <button type="submit" data-testid="settings-save">Save</button>
+          <button type="button" id="settings-close" data-testid="settings-close">Close</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Site iframes are created per tab by main.ts. -->
+    <main id="viewport"></main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
