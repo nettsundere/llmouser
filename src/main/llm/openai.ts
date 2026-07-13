@@ -15,6 +15,7 @@ export const openaiProvider: Provider = {
       },
       body: JSON.stringify({
         model: settings.model,
+        max_tokens: settings.maxTokens,
         messages: [
           { role: 'system', content: systemPrompt(settings.universe) },
           { role: 'user', content: userPrompt(request) }

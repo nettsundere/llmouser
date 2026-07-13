@@ -16,7 +16,7 @@ export const anthropicProvider: Provider = {
       },
       body: JSON.stringify({
         model: settings.model,
-        max_tokens: 4096,
+        max_tokens: settings.maxTokens,
         system: systemPrompt(settings.universe),
         messages: [{ role: 'user', content: userPrompt(request) }]
       })

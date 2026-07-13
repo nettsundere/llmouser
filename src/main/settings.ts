@@ -1,6 +1,6 @@
 import Store from 'electron-store'
 import type { LlmSettings, ProviderName, PublicSettings, SettingsUpdate } from '@shared/types'
-import { DEFAULT_UNIVERSE } from '@shared/types'
+import { DEFAULT_MAX_TOKENS, DEFAULT_UNIVERSE } from '@shared/types'
 
 const DEFAULT_ENDPOINTS: Record<ProviderName, string> = {
   openai: 'https://api.openai.com/v1',
@@ -17,7 +17,8 @@ const defaults: LlmSettings = {
   endpoint: DEFAULT_ENDPOINTS.openai,
   apiKey: '',
   model: DEFAULT_MODELS.openai,
-  universe: DEFAULT_UNIVERSE
+  universe: DEFAULT_UNIVERSE,
+  maxTokens: DEFAULT_MAX_TOKENS
 }
 
 // Lazy: constructing the store resolves the userData path, which E2E overrides via
@@ -37,7 +38,8 @@ export function getSettings(): LlmSettings {
     endpoint: s.get('endpoint'),
     apiKey: s.get('apiKey'),
     model: s.get('model'),
-    universe: s.get('universe') || DEFAULT_UNIVERSE
+    universe: s.get('universe') || DEFAULT_UNIVERSE,
+    maxTokens: s.get('maxTokens') || DEFAULT_MAX_TOKENS
   }
 }
 
@@ -49,7 +51,8 @@ export function getPublicSettings(): PublicSettings {
     endpoint: settings.endpoint,
     model: settings.model,
     hasApiKey: settings.apiKey.length > 0,
-    universe: settings.universe
+    universe: settings.universe,
+    maxTokens: settings.maxTokens
   }
 }
 
@@ -60,6 +63,8 @@ export function saveSettings(update: SettingsUpdate): PublicSettings {
   s.set('endpoint', update.endpoint?.trim() || DEFAULT_ENDPOINTS[provider])
   s.set('model', update.model?.trim() || DEFAULT_MODELS[provider])
   s.set('universe', update.universe?.trim() || DEFAULT_UNIVERSE)
+  const maxTokens = Math.floor(Number(update.maxTokens))
+  s.set('maxTokens', Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : DEFAULT_MAX_TOKENS)
   // Empty key field means "keep the stored key" — the UI never shows the saved value.
   if (update.apiKey && update.apiKey.trim().length > 0) {
     s.set('apiKey', update.apiKey.trim())

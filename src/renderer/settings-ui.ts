@@ -21,12 +21,14 @@ export function initSettingsUi(): void {
   const model = el<HTMLInputElement>('settings-model')
   const apiKey = el<HTMLInputElement>('settings-apikey')
   const universe = el<HTMLTextAreaElement>('settings-universe')
+  const maxTokens = el<HTMLInputElement>('settings-maxtokens')
 
   function apply(settings: PublicSettings): void {
     provider.value = settings.provider
     endpoint.value = settings.endpoint
     model.value = settings.model
     universe.value = settings.universe
+    maxTokens.value = String(settings.maxTokens)
     // The stored key is never shown; the field stays empty and blank means "keep".
     apiKey.value = ''
     apiKey.placeholder = settings.hasApiKey
@@ -59,7 +61,8 @@ export function initSettingsUi(): void {
       endpoint: endpoint.value,
       model: model.value,
       apiKey: apiKey.value,
-      universe: universe.value
+      universe: universe.value,
+      maxTokens: Number(maxTokens.value)
     })
     apply(saved)
     panel.hidden = true
