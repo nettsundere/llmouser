@@ -1,6 +1,7 @@
 import { join } from 'path'
 import { app, BrowserWindow, session } from 'electron'
 import { registerIpc } from './ipc'
+import { installMenu } from './menu'
 
 // Allow E2E tests to isolate settings storage per run. Must run before app is ready.
 if (process.env.LLM_BROWSER_USERDATA) {
@@ -76,6 +77,7 @@ function lockDownNetwork(): void {
 app.whenReady().then(() => {
   lockDownNetwork()
   registerIpc()
+  installMenu()
   createWindow()
 
   app.on('activate', () => {

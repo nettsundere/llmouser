@@ -1,5 +1,6 @@
 import './env.d'
 import { normalizeUrl } from '@shared/url'
+import { injectBase } from '@shared/site-html'
 import { initSettingsUi } from './settings-ui'
 
 const HISTORY_LIMIT = 10
@@ -15,6 +16,8 @@ interface Tab {
   currentUrl: string
   /** Visited URLs, oldest first — session context for the LLM. */
   history: string[]
+  /** Raw generated HTML of the current page — source for Save as PDF. */
+  html: string
   statusMessage: string
   statusError: boolean
   frame: HTMLIFrameElement
@@ -93,36 +96,6 @@ function injectInterceptor(html: string): string {
     return html.replace(/<\/body>/i, `${NAV_INTERCEPTOR}</body>`)
   }
   return html + NAV_INTERCEPTOR
-}
-
-/**
- * In-document network lockdown for generated pages: no remote subresources, no
- * fetch/XHR/WebSocket. Inline scripts/styles and data: URIs stay usable, so the
- * pages remain interactive and can embed their own images/fonts. Second layer on
- * top of the main process's session-wide request blocking.
- */
-const SITE_CSP =
-  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; " +
-  'img-src data:; font-src data:; media-src data:; frame-src about: data:'
-
-/**
- * Give the srcdoc document a base URL matching the virtual site. Relative links,
- * scripts setting location, form actions etc. then resolve to real https:// URLs
- * (never the chrome's own file:// base), so the main process reliably sees and
- * blocks them via will-frame-navigate. The CSP meta rides along, ahead of any
- * generated content.
- */
-function injectBase(html: string, baseUrl: string): string {
-  const tag =
-    `<meta http-equiv="Content-Security-Policy" content="${SITE_CSP}">` +
-    `<base href="${baseUrl.replace(/"/g, '&quot;')}">`
-  if (/<head[^>]*>/i.test(html)) {
-    return html.replace(/<head[^>]*>/i, (match) => match + tag)
-  }
-  if (/<html[^>]*>/i.test(html)) {
-    return html.replace(/<html[^>]*>/i, (match) => `${match}<head>${tag}</head>`)
-  }
-  return tag + html
 }
 
 function extractTitle(html: string): string {
@@ -235,6 +208,7 @@ function createTab(): Tab {
     addressValue: '',
     currentUrl: '',
     history: [],
+    html: '',
     statusMessage: 'Ready',
     statusError: false,
     frame
@@ -277,10 +251,12 @@ async function navigate(tab: Tab, url: string): Promise<void> {
     if (tab.history.length > HISTORY_LIMIT) tab.history.shift()
     tab.title = extractTitle(html) || tab.currentUrl
     tab.icon = extractIcon(html) ?? letterIcon(tab.currentUrl)
+    tab.html = html
     tab.frame.srcdoc = injectBase(injectInterceptor(html), tab.currentUrl)
     setTabStatus(tab, `Loaded ${input}`)
   } catch (error) {
     tab.frame.srcdoc = ''
+    tab.html = ''
     const message = error instanceof Error ? error.message : String(error)
     setTabStatus(tab, `Failed to load ${input}: ${message}`, true)
   }
@@ -305,6 +281,32 @@ form.addEventListener('submit', (event) => {
 })
 
 newTabButton.addEventListener('click', () => createTab())
+
+async function savePagePdf(tab: Tab): Promise<void> {
+  setTabStatus(tab, 'Saving PDF…')
+  try {
+    const result = await window.llmBrowser.savePdf(tab.currentUrl, tab.html)
+    if (result.saved) {
+      setTabStatus(tab, `Saved PDF: ${result.path}`)
+    } else {
+      setTabStatus(tab, 'PDF save canceled')
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    setTabStatus(tab, `Failed to save PDF: ${message}`, true)
+  }
+}
+
+// File > Save Page as PDF in the app menu.
+window.llmBrowser.onSavePdfRequest(() => {
+  const tab = active
+  if (!tab) return
+  if (!tab.html) {
+    setTabStatus(tab, 'Nothing to save as PDF')
+    return
+  }
+  void savePagePdf(tab)
+})
 
 // Link clicks / form submits inside a generated page arrive here.
 window.addEventListener('message', (event) => {

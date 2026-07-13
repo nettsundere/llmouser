@@ -1,8 +1,9 @@
-import { ipcMain } from 'electron'
-import type { NavigateContext, PublicSettings, SettingsUpdate } from '@shared/types'
+import { BrowserWindow, ipcMain } from 'electron'
+import type { NavigateContext, PublicSettings, SavePdfResult, SettingsUpdate } from '@shared/types'
 import { getPublicSettings, getSettings, saveSettings } from './settings'
 import { getProvider, normalizeUrl } from './llm'
 import type { SiteRequest } from './llm/provider'
+import { savePageAsPdf } from './pdf'
 
 const HISTORY_LIMIT = 10
 
@@ -22,6 +23,16 @@ export function registerIpc(): void {
 
       const request: SiteRequest = { url: normalizeUrl(url), referer, history }
       return provider.generateSite(request, settings)
+    }
+  )
+
+  ipcMain.handle(
+    'page:save-pdf',
+    (event, url: string, html: string): Promise<SavePdfResult> => {
+      if (typeof url !== 'string' || typeof html !== 'string' || !html) {
+        throw new Error('Nothing to save')
+      }
+      return savePageAsPdf(BrowserWindow.fromWebContents(event.sender), url, html)
     }
   )
 

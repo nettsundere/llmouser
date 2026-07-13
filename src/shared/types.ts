@@ -45,11 +45,22 @@ export interface NavigateContext {
   history?: string[]
 }
 
+/** Result of a save-as-PDF request. */
+export interface SavePdfResult {
+  saved: boolean
+  /** Absolute path of the written file when saved. */
+  path?: string
+}
+
 /** API surface exposed to the renderer via contextBridge (preload). */
 export interface LlmBrowserApi {
   navigate(url: string, context?: NavigateContext): Promise<string>
+  /** Render the given page HTML to a PDF file chosen via a save dialog. */
+  savePdf(url: string, html: string): Promise<SavePdfResult>
   getSettings(): Promise<PublicSettings>
   saveSettings(settings: SettingsUpdate): Promise<PublicSettings>
   /** Fires when the main process blocks a real navigation inside the site frame. */
   onBlockedNavigation(callback: (url: string) => void): void
+  /** Fires when the user picks File > Save Page as PDF in the app menu. */
+  onSavePdfRequest(callback: () => void): void
 }
