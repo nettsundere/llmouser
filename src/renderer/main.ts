@@ -3,7 +3,24 @@ import { normalizeUrl } from '@shared/url'
 import { injectBase } from '@shared/site-html'
 import { initSettingsUi } from './settings-ui'
 
+/** Max visited URLs sent to the LLM as session context. */
 const HISTORY_LIMIT = 10
+/** Max back/forward entries kept per tab. */
+const MAX_ENTRIES = 50
+
+/**
+ * One visited page, with its generated HTML cached so back/forward restores
+ * the exact page instead of asking the LLM to generate a different one.
+ */
+interface HistoryEntry {
+  /** Absolute URL of the page. */
+  url: string
+  /** Text that was shown in the address bar for this page. */
+  addressValue: string
+  title: string
+  icon: string | null
+  html: string
+}
 
 interface Tab {
   id: number
@@ -14,8 +31,10 @@ interface Tab {
   addressValue: string
   /** Absolute URL of the page currently shown; base for relative links. */
   currentUrl: string
-  /** Visited URLs, oldest first — session context for the LLM. */
-  history: string[]
+  /** Back/forward stack, oldest first. */
+  entries: HistoryEntry[]
+  /** Position in `entries` of the page currently shown; -1 for a fresh tab. */
+  index: number
   /** Raw generated HTML of the current page — source for Save as PDF. */
   html: string
   statusMessage: string
@@ -35,6 +54,8 @@ const status = el<HTMLElement>('status')
 const viewport = el<HTMLElement>('viewport')
 const tabBar = el<HTMLElement>('tab-bar')
 const newTabButton = el<HTMLButtonElement>('new-tab-button')
+const backButton = el<HTMLButtonElement>('back-button')
+const forwardButton = el<HTMLButtonElement>('forward-button')
 
 const tabs: Tab[] = []
 let active: Tab | null = null
@@ -178,6 +199,11 @@ function renderTabBar(): void {
   }
 }
 
+function updateNavButtons(): void {
+  backButton.disabled = !active || active.index <= 0
+  forwardButton.disabled = !active || active.index >= active.entries.length - 1
+}
+
 function activateTab(tab: Tab): void {
   active = tab
   for (const t of tabs) {
@@ -190,6 +216,7 @@ function activateTab(tab: Tab): void {
   address.value = tab.addressValue
   setStatus(tab.statusMessage, tab.statusError)
   renderTabBar()
+  updateNavButtons()
   if (!tab.currentUrl) address.focus()
 }
 
@@ -207,7 +234,8 @@ function createTab(): Tab {
     icon: null,
     addressValue: '',
     currentUrl: '',
-    history: [],
+    entries: [],
+    index: -1,
     html: '',
     statusMessage: 'Ready',
     statusError: false,
@@ -234,6 +262,39 @@ function closeTab(tab: Tab): void {
   }
 }
 
+/** Visited URLs up to the current page, oldest first — session context for the LLM. */
+function visitedUrls(tab: Tab): string[] {
+  return tab.entries
+    .slice(0, tab.index + 1)
+    .map((entry) => entry.url)
+    .slice(-HISTORY_LIMIT)
+}
+
+/** Show the history entry at `index`: restore its cached page without regenerating. */
+function showEntry(tab: Tab, index: number): void {
+  const entry = tab.entries[index]
+  if (!entry) return
+  tab.index = index
+  tab.currentUrl = entry.url
+  tab.addressValue = entry.addressValue
+  tab.title = entry.title
+  tab.icon = entry.icon
+  tab.html = entry.html
+  tab.frame.srcdoc = injectBase(injectInterceptor(entry.html), entry.url)
+  if (tab === active) address.value = entry.addressValue
+  setTabStatus(tab, `Loaded ${entry.addressValue}`)
+  renderTabBar()
+  updateNavButtons()
+}
+
+function goBack(tab: Tab): void {
+  if (tab.index > 0) showEntry(tab, tab.index - 1)
+}
+
+function goForward(tab: Tab): void {
+  if (tab.index < tab.entries.length - 1) showEntry(tab, tab.index + 1)
+}
+
 async function navigate(tab: Tab, url: string): Promise<void> {
   const input = url.trim()
   if (!input) return
@@ -242,16 +303,26 @@ async function navigate(tab: Tab, url: string): Promise<void> {
   if (tab === active) address.value = input
   setTabStatus(tab, `Loading ${input}…`)
   try {
+    const visited = visitedUrls(tab)
     const html = await window.llmBrowser.navigate(input, {
-      referer: tab.history[tab.history.length - 1],
-      history: [...tab.history]
+      referer: visited[visited.length - 1],
+      history: visited
     })
     tab.currentUrl = normalizeUrl(input)
-    tab.history.push(tab.currentUrl)
-    if (tab.history.length > HISTORY_LIMIT) tab.history.shift()
     tab.title = extractTitle(html) || tab.currentUrl
     tab.icon = extractIcon(html) ?? letterIcon(tab.currentUrl)
     tab.html = html
+    // Navigating from mid-history discards the forward entries, like a real browser.
+    tab.entries.splice(tab.index + 1)
+    tab.entries.push({
+      url: tab.currentUrl,
+      addressValue: input,
+      title: tab.title,
+      icon: tab.icon,
+      html
+    })
+    if (tab.entries.length > MAX_ENTRIES) tab.entries.shift()
+    tab.index = tab.entries.length - 1
     tab.frame.srcdoc = injectBase(injectInterceptor(html), tab.currentUrl)
     setTabStatus(tab, `Loaded ${input}`)
   } catch (error) {
@@ -261,6 +332,7 @@ async function navigate(tab: Tab, url: string): Promise<void> {
     setTabStatus(tab, `Failed to load ${input}: ${message}`, true)
   }
   renderTabBar()
+  updateNavButtons()
 }
 
 function navigateTo(tab: Tab, target: URL): void {
@@ -281,6 +353,27 @@ form.addEventListener('submit', (event) => {
 })
 
 newTabButton.addEventListener('click', () => createTab())
+
+backButton.addEventListener('click', () => {
+  if (active) goBack(active)
+})
+
+forwardButton.addEventListener('click', () => {
+  if (active) goForward(active)
+})
+
+// Safari-style history shortcuts: Cmd/Ctrl+[ and ], plus Alt+Arrow.
+window.addEventListener('keydown', (event) => {
+  if (!active) return
+  const mod = event.metaKey || event.ctrlKey
+  if ((mod && event.key === '[') || (event.altKey && event.key === 'ArrowLeft')) {
+    event.preventDefault()
+    goBack(active)
+  } else if ((mod && event.key === ']') || (event.altKey && event.key === 'ArrowRight')) {
+    event.preventDefault()
+    goForward(active)
+  }
+})
 
 async function savePagePdf(tab: Tab): Promise<void> {
   setTabStatus(tab, 'Saving PDF…')

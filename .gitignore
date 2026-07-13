@@ -13,3 +13,4 @@ playwright-report/
 .env.*
 *.local
 llm-browser-settings.json
+*.tsbuildinfo
