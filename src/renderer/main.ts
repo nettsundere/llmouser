@@ -240,7 +240,7 @@ async function navigate(tab: Tab, url: string): Promise<void> {
 
   tab.addressValue = input
   if (tab === active) address.value = input
-  setTabStatus(tab, `Generating ${input}…`)
+  setTabStatus(tab, `Loading ${input}…`)
   try {
     const html = await window.llmBrowser.navigate(input, {
       referer: tab.history[tab.history.length - 1],

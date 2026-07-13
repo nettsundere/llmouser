@@ -7,10 +7,6 @@ simulated internet stays coherent. The only real network connection the app make
 to the LLM endpoint you configure. You explore the universe 
 (current by default but you can optionally set other rules - see below)
 
-# Example
-![How llm browser looks like](https://raw.githubusercontent.com/nettsundere/llmouser/refs/heads/master/screenshots/screen.png "How it looks like")
-
-
 ## Run
 
 ```bash
