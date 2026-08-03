@@ -1,5 +1,6 @@
 {
   "name": "llmouser",
+  "productName": "LLMouser",
   "version": "0.1.0",
   "description": "Electron browser that generates websites with an LLM instead of real HTTP",
   "main": "out/main/index.js",
