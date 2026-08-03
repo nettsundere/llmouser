@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { app, BrowserWindow, session } from 'electron'
+import { app, BrowserWindow, nativeImage, session } from 'electron'
 import { registerIpc } from './ipc'
 import { installMenu } from './menu'
 
@@ -8,11 +8,18 @@ if (process.env.LLM_BROWSER_USERDATA) {
   app.setPath('userData', process.env.LLM_BROWSER_USERDATA)
 }
 
+// macOS gets the dock-style icon (inset squircle, transparent margin); Windows and
+// Linux get the full-bleed, slightly rounded variant.
+const appIcon = nativeImage.createFromPath(
+  join(app.getAppPath(), process.platform === 'darwin' ? 'assets/icon-mac.png' : 'assets/icon.png')
+)
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: 'llmouser',
+    title: 'LLMouser',
+    icon: appIcon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -75,6 +82,11 @@ function lockDownNetwork(): void {
 }
 
 app.whenReady().then(() => {
+  // macOS ignores BrowserWindow.icon; the dock icon must be set explicitly
+  // (packaged builds would get it from the bundle's .icns instead).
+  if (!appIcon.isEmpty()) {
+    app.dock?.setIcon(appIcon)
+  }
   lockDownNetwork()
   registerIpc()
   installMenu()

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0" stop-color="#1c1a3a"/>
+      <stop offset="1" stop-color="#0d0b20"/>
+    </linearGradient>
+    <linearGradient id="m" gradientUnits="userSpaceOnUse" x1="256" y1="96" x2="256" y2="412">
+      <stop offset="0" stop-color="#6d4fd4"/>
+      <stop offset="1" stop-color="#2f86c9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS squircle: content inset, transparent margin -->
+  <rect x="0" y="0" width="512" height="512" rx="48" fill="url(#bg)"/>
+
+  <g transform="translate(256 256) scale(1.2549) translate(-256 -256)">
+    <!-- tail: tapered segments -->
+    <path d="M320 388 C 380 390 414 370 424 342" fill="none" stroke="url(#m)" stroke-width="13" stroke-linecap="round"/>
+    <path d="M424 342 C 430 316 420 298 404 294" fill="none" stroke="url(#m)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M404 294 C 392 291 384 299 388 309" fill="none" stroke="url(#m)" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- ears -->
+    <ellipse cx="182" cy="138" rx="46" ry="42" transform="rotate(-24 182 138)" fill="url(#m)"/>
+    <ellipse cx="330" cy="138" rx="46" ry="42" transform="rotate(24 330 138)" fill="url(#m)"/>
+    <ellipse cx="186" cy="142" rx="26" ry="23" transform="rotate(-24 186 142)" fill="url(#bg)"/>
+    <ellipse cx="326" cy="142" rx="26" ry="23" transform="rotate(24 326 142)" fill="url(#bg)"/>
+
+    <!-- head: skull, flared cheeks, tapered muzzle -->
+    <path d="M256 122
+             C 302 122 324 158 322 190
+             C 320 224 296 252 268 266
+             Q 256 272 244 266
+             C 216 252 192 224 190 190
+             C 188 158 210 122 256 122 Z" fill="url(#m)"/>
+
+    <!-- whiskers -->
+    <g stroke="url(#m)" stroke-width="3" stroke-linecap="round" fill="none">
+      <path d="M234 238 C 214 233 200 233 186 237"/>
+      <path d="M236 248 C 214 246 198 249 184 255"/>
+      <path d="M278 238 C 298 233 312 233 326 237"/>
+      <path d="M276 248 C 298 246 314 249 328 255"/>
+    </g>
+
+    <!-- body: shoulders, haunches -->
+    <path d="M256 250
+             C 300 256 320 282 328 310
+             C 340 330 344 356 338 374
+             C 328 396 300 404 256 404
+             C 212 404 184 396 174 374
+             C 168 356 172 330 184 310
+             C 192 282 212 256 256 250 Z" fill="url(#m)"/>
+
+    <!-- legs pointing down, feet at bottom -->
+    <g stroke="url(#m)" fill="none" stroke-linecap="round">
+      <path d="M222 392 C 220 406 220 416 222 428" stroke-width="20"/>
+      <path d="M290 392 C 292 406 292 416 290 428" stroke-width="20"/>
+    </g>
+    <ellipse cx="220" cy="434" rx="13" ry="15" fill="url(#m)"/>
+    <ellipse cx="292" cy="434" rx="13" ry="15" fill="url(#m)"/>
+
+    <!-- arms raised, paws pointing up -->
+    <g stroke="url(#m)" fill="none" stroke-linecap="round">
+      <path d="M206 314 C 176 308 160 292 156 268 C 155 259 156 251 158 244" stroke-width="20"/>
+      <path d="M306 314 C 336 308 352 292 356 268 C 357 259 356 251 354 244" stroke-width="20"/>
+    </g>
+    <circle cx="158" cy="242" r="12" fill="url(#m)"/>
+    <circle cx="354" cy="242" r="12" fill="url(#m)"/>
+
+    <!-- negative-space detail: closed eyes, leg fold -->
+    <g stroke="url(#bg)" fill="none" stroke-linecap="round">
+      <path d="M220 190 Q 231 199 242 190" stroke-width="6"/>
+      <path d="M270 190 Q 281 199 292 190" stroke-width="6"/>
+    </g>
+  </g>
+</svg>
