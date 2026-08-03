@@ -31,8 +31,7 @@ address like `google.com`.
 ## Test
 
 ```bash
-npm run test:e2e            # E2E suite (Playwright + mock LLM, no network, no keys)
-npm run test:e2e:coverage   # same, plus coverage report in coverage/index.html
+npm run test:e2e            # E2E suite (Playwright + mock LLM, no network, no keys) + coverage
 ```
 
 ## Configure the universe
