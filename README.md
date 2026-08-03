@@ -1,6 +1,6 @@
 <div align="center">
   <img src="assets/logo.svg" alt="LLMouser logo — a meditating mouse" width="140">
-  <h1>LLMouser</h1>
+  <h1>The LLMouser</h1>
   <p><strong>The LLM browser that allows you explore current and other universes</strong></p>
 </div>
 
