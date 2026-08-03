@@ -46,6 +46,7 @@ export const zh: Messages = {
   menuExit: '退出',
 
   menuAbout: (appName) => `关于 ${appName}`,
+  aboutVersion: '版本',
   menuServices: '服务',
   menuHide: (appName) => `隐藏 ${appName}`,
   menuHideOthers: '隐藏其他',

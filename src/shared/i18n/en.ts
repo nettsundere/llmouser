@@ -46,6 +46,7 @@ export const en: Messages = {
   menuExit: 'Exit',
 
   menuAbout: (appName) => `About ${appName}`,
+  aboutVersion: 'Version',
   menuServices: 'Services',
   menuHide: (appName) => `Hide ${appName}`,
   menuHideOthers: 'Hide Others',

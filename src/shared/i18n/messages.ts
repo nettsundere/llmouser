@@ -51,6 +51,8 @@ export interface Messages {
   menuExit: string
 
   menuAbout(appName: string): string
+  /** "Version" label in the About dialog, prefixed to the version number. */
+  aboutVersion: string
   menuServices: string
   menuHide(appName: string): string
   menuHideOthers: string

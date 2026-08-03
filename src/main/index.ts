@@ -1,6 +1,7 @@
 import { join } from 'path'
-import { app, BrowserWindow, Menu, nativeImage, session } from 'electron'
+import { app, BrowserWindow, Menu, session } from 'electron'
 import { MESSAGES } from '@shared/i18n'
+import { appIcon } from './icon'
 import { registerIpc } from './ipc'
 import { installMenu } from './menu'
 import { getSettings } from './settings'
@@ -10,24 +11,6 @@ if (process.env.LLM_BROWSER_USERDATA) {
   app.setPath('userData', process.env.LLM_BROWSER_USERDATA)
 }
 
-// macOS gets the dock-style icon (inset squircle, transparent margin); Windows and
-// Linux get the full-bleed, slightly rounded variant.
-const appIconPath = join(
-  app.getAppPath(),
-  process.platform === 'darwin' ? 'assets/icon-mac.png' : 'assets/icon.png'
-)
-const appIcon = nativeImage.createFromPath(appIconPath)
-
-// About window (macOS app menu > About): app icon, version and license line.
-// Electron has no getter for these options, so keep them on a global for E2E.
-const aboutPanelOptions: Electron.AboutPanelOptionsOptions = {
-  applicationName: 'LLMouser',
-  applicationVersion: app.getVersion(),
-  copyright: '© 2026 Vladimir Kiselev. MIT License',
-  iconPath: appIconPath
-}
-app.setAboutPanelOptions(aboutPanelOptions)
-;(globalThis as { aboutPanelOptions?: unknown }).aboutPanelOptions = aboutPanelOptions
 
 function createWindow(): void {
   const win = new BrowserWindow({

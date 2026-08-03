@@ -46,6 +46,7 @@ export const ru: Messages = {
   menuExit: 'Выход',
 
   menuAbout: (appName) => `О программе ${appName}`,
+  aboutVersion: 'Версия',
   menuServices: 'Службы',
   menuHide: (appName) => `Скрыть ${appName}`,
   menuHideOthers: 'Скрыть остальные',

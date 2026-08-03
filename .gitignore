@@ -1,7 +1,6 @@
 node_modules/
 out/
 dist/
-coverage/
 .coverage-raw/
 test-results/
 playwright-report/

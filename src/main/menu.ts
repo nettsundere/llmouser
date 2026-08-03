@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import type { Language } from '@shared/types'
 import { MESSAGES } from '@shared/i18n'
+import { showAboutDialog } from './about'
 
 /**
  * Application menu: standard roles plus File > Save Page as PDF. Only the
@@ -19,7 +20,9 @@ export function installMenu(language: Language): void {
   const macAppMenu: Electron.MenuItemConstructorOptions = {
     label: appName,
     submenu: [
-      { role: 'about', label: t.menuAbout(appName) },
+      // Custom dialog instead of role: 'about' — the native macOS panel cannot
+      // show our icon in dev builds (it always uses the bundle icon).
+      { id: 'about', label: t.menuAbout(appName), click: () => showAboutDialog(language) },
       { type: 'separator' },
       { role: 'services', label: t.menuServices },
       { type: 'separator' },
@@ -49,9 +52,17 @@ export function installMenu(language: Language): void {
           }
         },
         { type: 'separator' },
-        isMac
-          ? { role: 'close', label: t.menuCloseWindow }
-          : { role: 'quit', label: t.menuExit }
+        ...(isMac
+          ? ([{ role: 'close', label: t.menuCloseWindow }] as Electron.MenuItemConstructorOptions[])
+          : ([
+              {
+                id: 'about',
+                label: t.menuAbout(appName),
+                click: () => showAboutDialog(language)
+              },
+              { type: 'separator' },
+              { role: 'quit', label: t.menuExit }
+            ] as Electron.MenuItemConstructorOptions[]))
       ]
     },
     {

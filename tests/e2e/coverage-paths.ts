@@ -1,8 +1,5 @@
 import { resolve } from 'path'
 
-/** Coverage collection is opt-in via COVERAGE=1 (set by the test:e2e:coverage script). */
-export const COVERAGE_ENABLED = process.env.COVERAGE === '1'
-
 const RAW_ROOT = resolve('.coverage-raw')
 
 /** Main-process V8 coverage is dumped here via NODE_V8_COVERAGE. */
