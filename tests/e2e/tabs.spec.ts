@@ -79,6 +79,23 @@ test('closing tabs activates a neighbor; last close leaves a fresh tab', async (
   await expect(page.getByTestId('address-bar')).toHaveValue('')
 })
 
+test('typed address bar text survives switching tabs', async ({ page }) => {
+  // Unsubmitted draft in the first tab.
+  await page.getByTestId('address-bar').fill('draft-one.example')
+
+  // Second tab starts empty; type another draft there.
+  await page.getByTestId('new-tab-button').click()
+  await expect(page.getByTestId('address-bar')).toHaveValue('')
+  await page.getByTestId('address-bar').fill('draft two')
+
+  // Switching back and forth restores each tab's draft untouched.
+  const tabItems = page.getByTestId('tab')
+  await tabItems.nth(0).click()
+  await expect(page.getByTestId('address-bar')).toHaveValue('draft-one.example')
+  await tabItems.nth(1).click()
+  await expect(page.getByTestId('address-bar')).toHaveValue('draft two')
+})
+
 test('falls back to a generated letter icon when the page has no favicon', async ({ page }) => {
   await page.getByTestId('address-bar').fill('noicon.test')
   await page.getByTestId('go-button').click()

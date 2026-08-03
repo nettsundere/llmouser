@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { app, BrowserWindow, Menu, session } from 'electron'
+import { app, BrowserWindow, Menu, nativeTheme, session } from 'electron'
 import { MESSAGES } from '@shared/i18n'
 import { appIcon } from './icon'
 import { registerIpc } from './ipc'
@@ -12,12 +12,24 @@ if (process.env.LLM_BROWSER_USERDATA) {
 }
 
 
+/**
+ * Matches --chrome-bg in renderer/styles.css. Without an explicit window
+ * background Electron paints newly exposed pixels white during resize and
+ * maximize, which flashes against the dark chrome and status bar.
+ */
+function chromeBackground(): string {
+  return nativeTheme.shouldUseDarkColors ? '#38383a' : '#f6f5f6'
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     title: 'LLMouser',
     icon: appIcon,
+    backgroundColor: chromeBackground(),
+    // E2E runs set LLM_BROWSER_HIDDEN so tests don't pop windows on screen.
+    show: process.env.LLM_BROWSER_HIDDEN !== '1',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -103,6 +115,12 @@ app.whenReady().then(() => {
   if (!appIcon.isEmpty()) {
     app.dock?.setIcon(appIcon)
   }
+  // Keep the resize backfill color in sync with OS theme switches.
+  nativeTheme.on('updated', () => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.setBackgroundColor(chromeBackground())
+    }
+  })
   lockDownNetwork()
   registerIpc()
   installMenu(getSettings().language)

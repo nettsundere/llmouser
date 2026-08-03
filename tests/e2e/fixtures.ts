@@ -27,6 +27,10 @@ export const test = base.extend<Fixtures>({
       LLM_BROWSER_USERDATA: userDataDir,
       NODE_V8_COVERAGE: MAIN_COVERAGE_DIR
     }
+    // Windows stay hidden during tests; set LLM_BROWSER_HEADED=1 to watch them.
+    if (!process.env.LLM_BROWSER_HEADED) {
+      env.LLM_BROWSER_HIDDEN = '1'
+    }
 
     const app = await _electron.launch({ args: [resolve('.')], env })
     await use(app)

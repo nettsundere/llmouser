@@ -129,10 +129,16 @@ body {
   color: var(--text-dim);
 }
 
+/* Focus keeps the resting background: tab switches move focus in and out of
+   the bar, and a background swap here flashes on every switch. */
 #address-bar:focus {
   outline: none;
-  background: var(--field-focus-bg);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* Left-align only once there is real text: focusing an empty bar (every new
+   tab auto-focuses it) must not jump the centered placeholder to the left. */
+#address-bar:focus:not(:placeholder-shown) {
   text-align: left;
 }
 
@@ -355,7 +361,13 @@ body {
   width: 100%;
   height: 100%;
   border: none;
-  /* Generated pages assume a browser-default white canvas in both themes. */
+  /* Empty tabs blend into the chrome; a white canvas here would flash a
+     full-viewport white rectangle when a tab is created in dark mode. */
+  background: transparent;
+}
+
+/* Generated pages assume a browser-default white canvas in both themes. */
+.site-frame.has-content {
   background: #fff;
 }
 

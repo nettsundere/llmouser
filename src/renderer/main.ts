@@ -173,38 +173,73 @@ const NEW_TAB_ICON =
       '<rect width="16" height="16" rx="3" fill="#a1a1aa"/></svg>'
   )
 
+interface TabView {
+  node: HTMLDivElement
+  icon: HTMLImageElement
+  title: HTMLSpanElement
+  close: HTMLButtonElement
+}
+
+const tabViews = new Map<Tab, TabView>()
+
+function createTabView(tab: Tab): TabView {
+  const node = document.createElement('div')
+  node.className = 'tab'
+  node.setAttribute('data-testid', 'tab')
+
+  const icon = document.createElement('img')
+  icon.className = 'tab-icon'
+  icon.setAttribute('data-testid', 'tab-icon')
+  icon.alt = ''
+
+  const title = document.createElement('span')
+  title.className = 'tab-title'
+  title.setAttribute('data-testid', 'tab-title')
+
+  const close = document.createElement('button')
+  close.className = 'tab-close'
+  close.setAttribute('data-testid', 'tab-close')
+  close.type = 'button'
+  close.textContent = '×'
+  close.addEventListener('click', (event) => {
+    event.stopPropagation()
+    closeTab(tab)
+  })
+
+  node.append(icon, title, close)
+  node.addEventListener('click', () => activateTab(tab))
+  return { node, icon, title, close }
+}
+
+/**
+ * Updates existing tab nodes in place instead of rebuilding the bar: recreating
+ * the <img> favicons forces a re-decode, which flashes blank for a frame.
+ */
 function renderTabBar(): void {
-  tabBar.querySelectorAll('.tab').forEach((node) => node.remove())
+  for (const [tab, view] of tabViews) {
+    if (!tabs.includes(tab)) {
+      view.node.remove()
+      tabViews.delete(tab)
+    }
+  }
+  let previous: Element | null = null
   for (const tab of tabs) {
-    const node = document.createElement('div')
-    node.className = 'tab' + (tab === active ? ' active' : '')
-    node.setAttribute('data-testid', 'tab')
+    let view = tabViews.get(tab)
+    if (!view) {
+      view = createTabView(tab)
+      tabViews.set(tab, view)
+    }
+    view.node.classList.toggle('active', tab === active)
+    const iconSrc = tab.icon ?? (tab.currentUrl ? letterIcon(tab.currentUrl) : NEW_TAB_ICON)
+    if (view.icon.getAttribute('src') !== iconSrc) view.icon.src = iconSrc
+    view.title.textContent = tab.title || messages().newTab
+    view.close.title = messages().closeTab
 
-    const icon = document.createElement('img')
-    icon.className = 'tab-icon'
-    icon.setAttribute('data-testid', 'tab-icon')
-    icon.alt = ''
-    icon.src = tab.icon ?? (tab.currentUrl ? letterIcon(tab.currentUrl) : NEW_TAB_ICON)
-
-    const title = document.createElement('span')
-    title.className = 'tab-title'
-    title.setAttribute('data-testid', 'tab-title')
-    title.textContent = tab.title || messages().newTab
-
-    const close = document.createElement('button')
-    close.className = 'tab-close'
-    close.setAttribute('data-testid', 'tab-close')
-    close.type = 'button'
-    close.title = messages().closeTab
-    close.textContent = '×'
-    close.addEventListener('click', (event) => {
-      event.stopPropagation()
-      closeTab(tab)
-    })
-
-    node.append(icon, title, close)
-    node.addEventListener('click', () => activateTab(tab))
-    tabBar.insertBefore(node, newTabButton)
+    const expected: Element | null = previous
+      ? previous.nextElementSibling
+      : tabBar.firstElementChild
+    if (expected !== view.node) tabBar.insertBefore(view.node, expected)
+    previous = view.node
   }
 }
 
@@ -289,6 +324,7 @@ function showEntry(tab: Tab, index: number): void {
   tab.title = entry.title
   tab.icon = entry.icon
   tab.html = entry.html
+  tab.frame.classList.add('has-content')
   tab.frame.srcdoc = injectBase(injectInterceptor(entry.html), entry.url)
   if (tab === active) address.value = entry.addressValue
   setTabStatus(tab, (m) => m.loaded(entry.addressValue))
@@ -332,9 +368,11 @@ async function navigate(tab: Tab, url: string): Promise<void> {
     })
     if (tab.entries.length > MAX_ENTRIES) tab.entries.shift()
     tab.index = tab.entries.length - 1
+    tab.frame.classList.add('has-content')
     tab.frame.srcdoc = injectBase(injectInterceptor(html), tab.currentUrl)
     setTabStatus(tab, (m) => m.loaded(input))
   } catch (error) {
+    tab.frame.classList.remove('has-content')
     tab.frame.srcdoc = ''
     tab.html = ''
     const message = error instanceof Error ? error.message : String(error)
@@ -355,6 +393,11 @@ function navigateTo(tab: Tab, target: URL): void {
   }
   void navigate(tab, target.toString())
 }
+
+// Keep in-progress typing per tab so switching tabs and back restores the draft.
+address.addEventListener('input', () => {
+  if (active) active.addressValue = address.value
+})
 
 form.addEventListener('submit', (event) => {
   event.preventDefault()

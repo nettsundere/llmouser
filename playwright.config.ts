@@ -8,6 +8,8 @@ export default defineConfig({
   // isolated userData dir, and coverage dumps are unique per process (main,
   // NODE_V8_COVERAGE) or per test id (renderer).
   fullyParallel: true,
+  // Most of the cores, leaving some headroom (Playwright's default is half).
+  workers: '85%',
   timeout: 30_000,
   expect: { timeout: 10_000 },
   reporter: [['list']]
