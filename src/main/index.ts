@@ -1,7 +1,9 @@
 import { join } from 'path'
-import { app, BrowserWindow, nativeImage, session } from 'electron'
+import { app, BrowserWindow, Menu, nativeImage, session } from 'electron'
+import { MESSAGES } from '@shared/i18n'
 import { registerIpc } from './ipc'
 import { installMenu } from './menu'
+import { getSettings } from './settings'
 
 // Allow E2E tests to isolate settings storage per run. Must run before app is ready.
 if (process.env.LLM_BROWSER_USERDATA) {
@@ -10,9 +12,22 @@ if (process.env.LLM_BROWSER_USERDATA) {
 
 // macOS gets the dock-style icon (inset squircle, transparent margin); Windows and
 // Linux get the full-bleed, slightly rounded variant.
-const appIcon = nativeImage.createFromPath(
-  join(app.getAppPath(), process.platform === 'darwin' ? 'assets/icon-mac.png' : 'assets/icon.png')
+const appIconPath = join(
+  app.getAppPath(),
+  process.platform === 'darwin' ? 'assets/icon-mac.png' : 'assets/icon.png'
 )
+const appIcon = nativeImage.createFromPath(appIconPath)
+
+// About window (macOS app menu > About): app icon, version and license line.
+// Electron has no getter for these options, so keep them on a global for E2E.
+const aboutPanelOptions: Electron.AboutPanelOptionsOptions = {
+  applicationName: 'LLMouser',
+  applicationVersion: app.getVersion(),
+  copyright: '© 2026 Vladimir Kiselev. MIT License',
+  iconPath: appIconPath
+}
+app.setAboutPanelOptions(aboutPanelOptions)
+;(globalThis as { aboutPanelOptions?: unknown }).aboutPanelOptions = aboutPanelOptions
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -49,6 +64,24 @@ function createWindow(): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
     win.webContents.send('frame-navigate-blocked', url)
     return { action: 'deny' }
+  })
+
+  // Right-click anywhere (chrome or generated page): edit actions + Save as PDF,
+  // labeled in the current UI language.
+  win.webContents.on('context-menu', (_event, params) => {
+    const t = MESSAGES[getSettings().language]
+    const menu = Menu.buildFromTemplate([
+      { role: 'cut', label: t.menuCut, enabled: params.editFlags.canCut },
+      { role: 'copy', label: t.menuCopy, enabled: params.editFlags.canCopy },
+      { role: 'paste', label: t.menuPaste, enabled: params.editFlags.canPaste },
+      { type: 'separator' },
+      {
+        id: 'save-pdf',
+        label: t.menuSavePdf,
+        click: () => win.webContents.send('save-pdf-requested')
+      }
+    ])
+    menu.popup({ window: win })
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -89,7 +122,7 @@ app.whenReady().then(() => {
   }
   lockDownNetwork()
   registerIpc()
-  installMenu()
+  installMenu(getSettings().language)
   createWindow()
 
   app.on('activate', () => {

@@ -1,5 +1,11 @@
 export type ProviderName = 'openai' | 'anthropic'
 
+export type Language = 'en' | 'ru' | 'zh'
+
+export const LANGUAGES: Language[] = ['en', 'ru', 'zh']
+
+export const DEFAULT_LANGUAGE: Language = 'en'
+
 /** The universe websites are generated in, unless the user redefines it. */
 export const DEFAULT_UNIVERSE =
   'Our real universe, exactly as it is today: real sites, brands, people and events.'
@@ -17,6 +23,8 @@ export interface LlmSettings {
   universe: string
   /** Output token cap sent as max_tokens on every generation request. */
   maxTokens: number
+  /** UI language of the browser chrome. */
+  language: Language
 }
 
 /** Settings as exposed to the renderer — the API key itself never leaves main. */
@@ -27,6 +35,7 @@ export interface PublicSettings {
   hasApiKey: boolean
   universe: string
   maxTokens: number
+  language: Language
 }
 
 /** Settings update from the UI. Omitted/empty apiKey keeps the stored key. */
@@ -37,6 +46,7 @@ export interface SettingsUpdate {
   apiKey?: string
   universe: string
   maxTokens: number
+  language: Language
 }
 
 /** Per-tab session context sent along with a navigation. */

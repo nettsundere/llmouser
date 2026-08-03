@@ -1,6 +1,8 @@
 import './env.d'
 import { normalizeUrl } from '@shared/url'
 import { injectBase } from '@shared/site-html'
+import type { Messages } from '@shared/i18n'
+import { messages, onLanguageChange } from './i18n'
 import { initSettingsUi } from './settings-ui'
 
 /** Max visited URLs sent to the LLM as session context. */
@@ -22,8 +24,15 @@ interface HistoryEntry {
   html: string
 }
 
+/**
+ * A status line message, computed from the active language so a language
+ * switch retranslates whatever is currently shown.
+ */
+type StatusText = (m: Messages) => string
+
 interface Tab {
   id: number
+  /** Page title from the generated HTML; empty for a fresh tab (localized fallback). */
   title: string
   /** SVG favicon as a data URI, extracted from the generated page. */
   icon: string | null
@@ -37,7 +46,7 @@ interface Tab {
   index: number
   /** Raw generated HTML of the current page — source for Save as PDF. */
   html: string
-  statusMessage: string
+  statusMessage: StatusText
   statusError: boolean
   frame: HTMLIFrameElement
 }
@@ -61,12 +70,12 @@ const tabs: Tab[] = []
 let active: Tab | null = null
 let nextTabId = 1
 
-function setStatus(message: string, isError = false): void {
-  status.textContent = message
+function setStatus(message: StatusText, isError = false): void {
+  status.textContent = message(messages())
   status.classList.toggle('error', isError)
 }
 
-function setTabStatus(tab: Tab, message: string, isError = false): void {
+function setTabStatus(tab: Tab, message: StatusText, isError = false): void {
   tab.statusMessage = message
   tab.statusError = isError
   if (tab === active) setStatus(message, isError)
@@ -180,13 +189,13 @@ function renderTabBar(): void {
     const title = document.createElement('span')
     title.className = 'tab-title'
     title.setAttribute('data-testid', 'tab-title')
-    title.textContent = tab.title
+    title.textContent = tab.title || messages().newTab
 
     const close = document.createElement('button')
     close.className = 'tab-close'
     close.setAttribute('data-testid', 'tab-close')
     close.type = 'button'
-    close.title = 'Close tab'
+    close.title = messages().closeTab
     close.textContent = '×'
     close.addEventListener('click', (event) => {
       event.stopPropagation()
@@ -224,20 +233,20 @@ function createTab(): Tab {
   const frame = document.createElement('iframe')
   frame.className = 'site-frame'
   frame.setAttribute('sandbox', 'allow-scripts allow-forms')
-  frame.title = 'Rendered site'
+  frame.title = messages().renderedSite
   frame.hidden = true
   viewport.appendChild(frame)
 
   const tab: Tab = {
     id: nextTabId++,
-    title: 'New tab',
+    title: '',
     icon: null,
     addressValue: '',
     currentUrl: '',
     entries: [],
     index: -1,
     html: '',
-    statusMessage: 'Ready',
+    statusMessage: (m) => m.ready,
     statusError: false,
     frame
   }
@@ -282,7 +291,7 @@ function showEntry(tab: Tab, index: number): void {
   tab.html = entry.html
   tab.frame.srcdoc = injectBase(injectInterceptor(entry.html), entry.url)
   if (tab === active) address.value = entry.addressValue
-  setTabStatus(tab, `Loaded ${entry.addressValue}`)
+  setTabStatus(tab, (m) => m.loaded(entry.addressValue))
   renderTabBar()
   updateNavButtons()
 }
@@ -301,7 +310,7 @@ async function navigate(tab: Tab, url: string): Promise<void> {
 
   tab.addressValue = input
   if (tab === active) address.value = input
-  setTabStatus(tab, `Loading ${input}…`)
+  setTabStatus(tab, (m) => m.loading(input))
   try {
     const visited = visitedUrls(tab)
     const html = await window.llmBrowser.navigate(input, {
@@ -324,12 +333,12 @@ async function navigate(tab: Tab, url: string): Promise<void> {
     if (tab.entries.length > MAX_ENTRIES) tab.entries.shift()
     tab.index = tab.entries.length - 1
     tab.frame.srcdoc = injectBase(injectInterceptor(html), tab.currentUrl)
-    setTabStatus(tab, `Loaded ${input}`)
+    setTabStatus(tab, (m) => m.loaded(input))
   } catch (error) {
     tab.frame.srcdoc = ''
     tab.html = ''
     const message = error instanceof Error ? error.message : String(error)
-    setTabStatus(tab, `Failed to load ${input}: ${message}`, true)
+    setTabStatus(tab, (m) => m.failedToLoad(input, message), true)
   }
   renderTabBar()
   updateNavButtons()
@@ -376,17 +385,17 @@ window.addEventListener('keydown', (event) => {
 })
 
 async function savePagePdf(tab: Tab): Promise<void> {
-  setTabStatus(tab, 'Saving PDF…')
+  setTabStatus(tab, (m) => m.savingPdf)
   try {
     const result = await window.llmBrowser.savePdf(tab.currentUrl, tab.html)
     if (result.saved) {
-      setTabStatus(tab, `Saved PDF: ${result.path}`)
+      setTabStatus(tab, (m) => m.savedPdf(result.path ?? ''))
     } else {
-      setTabStatus(tab, 'PDF save canceled')
+      setTabStatus(tab, (m) => m.pdfCanceled)
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    setTabStatus(tab, `Failed to save PDF: ${message}`, true)
+    setTabStatus(tab, (m) => m.failedPdf(message), true)
   }
 }
 
@@ -395,7 +404,7 @@ window.llmBrowser.onSavePdfRequest(() => {
   const tab = active
   if (!tab) return
   if (!tab.html) {
-    setTabStatus(tab, 'Nothing to save as PDF')
+    setTabStatus(tab, (m) => m.nothingToSave)
     return
   }
   void savePagePdf(tab)
@@ -446,6 +455,14 @@ window.llmBrowser.onBlockedNavigation((rawUrl) => {
   } catch {
     // Unresolvable target: ignore.
   }
+})
+
+// Language switch retranslates everything already on screen: tab titles and
+// tooltips, the current status line, and the site-frame accessibility titles.
+onLanguageChange(() => {
+  renderTabBar()
+  for (const tab of tabs) tab.frame.title = messages().renderedSite
+  if (active) setStatus(active.statusMessage, active.statusError)
 })
 
 initSettingsUi()

@@ -264,10 +264,44 @@ body {
   background: var(--chrome-bg);
 }
 
+#settings-tabs {
+  display: flex;
+  gap: 6px;
+  max-width: 480px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--chrome-border);
+}
+
+.settings-tab {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-dim, var(--text));
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-tab:hover {
+  background: var(--control-hover);
+}
+
+.settings-tab.active {
+  border-color: var(--chrome-border);
+  background: var(--field-focus-bg);
+  color: var(--text);
+}
+
 #settings-form {
   display: grid;
   gap: 10px;
   max-width: 480px;
+}
+
+#settings-form [role='tabpanel']:not([hidden]) {
+  display: grid;
+  gap: 10px;
 }
 
 #settings-form label {

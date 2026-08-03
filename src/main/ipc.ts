@@ -3,6 +3,7 @@ import type { NavigateContext, PublicSettings, SavePdfResult, SettingsUpdate } f
 import { getPublicSettings, getSettings, saveSettings } from './settings'
 import { getProvider, normalizeUrl } from './llm'
 import type { SiteRequest } from './llm/provider'
+import { installMenu } from './menu'
 import { savePageAsPdf } from './pdf'
 
 const HISTORY_LIMIT = 10
@@ -38,7 +39,11 @@ export function registerIpc(): void {
 
   ipcMain.handle('settings:get', (): PublicSettings => getPublicSettings())
 
-  ipcMain.handle('settings:save', (_event, update: SettingsUpdate): PublicSettings =>
-    saveSettings(update)
-  )
+  ipcMain.handle('settings:save', (_event, update: SettingsUpdate): PublicSettings => {
+    const before = getSettings().language
+    const saved = saveSettings(update)
+    // Language switch retranslates the app menu immediately.
+    if (saved.language !== before) installMenu(saved.language)
+    return saved
+  })
 }

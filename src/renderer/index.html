@@ -15,8 +15,9 @@
             data-testid="back-button"
             type="button"
             class="toolbar-button"
-            title="Show the previous page"
+            title="Back"
             aria-label="Back"
+            data-i18n-title="back"
             disabled
           >
             <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -35,8 +36,9 @@
             data-testid="forward-button"
             type="button"
             class="toolbar-button"
-            title="Show the next page"
+            title="Forward"
             aria-label="Forward"
+            data-i18n-title="forward"
             disabled
           >
             <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -58,8 +60,17 @@
             type="text"
             placeholder="Search or enter website name"
             aria-label="Address bar"
+            data-i18n-placeholder="addressPlaceholder"
+            data-i18n-aria="addressBar"
           />
-          <button id="go-button" data-testid="go-button" type="submit" title="Go" aria-label="Go">
+          <button
+            id="go-button"
+            data-testid="go-button"
+            type="submit"
+            title="Go"
+            aria-label="Go"
+            data-i18n-title="go"
+          >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
                 d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
@@ -80,6 +91,7 @@
             class="toolbar-button"
             title="Settings"
             aria-label="Settings"
+            data-i18n-title="settings"
           >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path
@@ -95,50 +107,101 @@
         </div>
       </div>
       <div id="tab-bar" data-testid="tab-bar">
-        <button id="new-tab-button" data-testid="new-tab-button" type="button" title="New tab">
+        <button
+          id="new-tab-button"
+          data-testid="new-tab-button"
+          type="button"
+          title="New tab"
+          data-i18n-title="newTab"
+        >
           +
         </button>
       </div>
     </header>
 
     <section id="settings-panel" data-testid="settings-panel" hidden>
-      <h2>LLM Settings</h2>
+      <h2 data-testid="settings-title" data-i18n="settingsTitle">Settings</h2>
+      <div id="settings-tabs" role="tablist">
+        <button
+          type="button"
+          id="settings-tab-llm"
+          data-testid="settings-tab-llm"
+          class="settings-tab active"
+          role="tab"
+          aria-selected="true"
+          data-i18n="settingsTabLlm"
+        >
+          LLM Settings
+        </button>
+        <button
+          type="button"
+          id="settings-tab-ux"
+          data-testid="settings-tab-ux"
+          class="settings-tab"
+          role="tab"
+          aria-selected="false"
+          data-i18n="settingsTabUx"
+        >
+          UX
+        </button>
+      </div>
       <form id="settings-form">
-        <label>
-          Provider
-          <select id="settings-provider" data-testid="settings-provider">
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-          </select>
-        </label>
-        <label>
-          Endpoint
-          <input id="settings-endpoint" data-testid="settings-endpoint" type="text" />
-        </label>
-        <label>
-          Model
-          <input id="settings-model" data-testid="settings-model" type="text" />
-        </label>
-        <label>
-          API Key
-          <input id="settings-apikey" data-testid="settings-apikey" type="password" />
-        </label>
-        <label>
-          Max output tokens
-          <input id="settings-maxtokens" data-testid="settings-maxtokens" type="number" min="1" />
-        </label>
-        <label>
-          Universe rules
-          <textarea
-            id="settings-universe"
-            data-testid="settings-universe"
-            rows="3"
-            placeholder="Describe the universe all websites exist in"
-          ></textarea>
-        </label>
+        <div id="settings-section-llm" role="tabpanel">
+          <label>
+            <span data-i18n="provider">Provider</span>
+            <select id="settings-provider" data-testid="settings-provider">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="endpoint">Endpoint</span>
+            <input id="settings-endpoint" data-testid="settings-endpoint" type="text" />
+          </label>
+          <label>
+            <span data-i18n="model">Model</span>
+            <input id="settings-model" data-testid="settings-model" type="text" />
+          </label>
+          <label>
+            <span data-i18n="apiKey">API Key</span>
+            <input id="settings-apikey" data-testid="settings-apikey" type="password" />
+          </label>
+          <label>
+            <span data-i18n="maxTokens">Max output tokens</span>
+            <input
+              id="settings-maxtokens"
+              data-testid="settings-maxtokens"
+              type="number"
+              min="1"
+            />
+          </label>
+          <label>
+            <span data-i18n="universeRules">Universe rules</span>
+            <textarea
+              id="settings-universe"
+              data-testid="settings-universe"
+              rows="3"
+              placeholder="Describe the universe all websites exist in"
+              data-i18n-placeholder="universePlaceholder"
+            ></textarea>
+          </label>
+        </div>
+        <div id="settings-section-ux" role="tabpanel" hidden>
+          <label>
+            <span data-i18n="language">Language</span>
+            <select id="settings-language" data-testid="settings-language"></select>
+          </label>
+        </div>
         <div class="settings-actions">
-          <button type="submit" data-testid="settings-save">Save</button>
-          <button type="button" id="settings-close" data-testid="settings-close">Close</button>
+          <button type="submit" data-testid="settings-save" data-i18n="save">Save</button>
+          <button
+            type="button"
+            id="settings-close"
+            data-testid="settings-close"
+            data-i18n="close"
+          >
+            Close
+          </button>
         </div>
       </form>
     </section>
