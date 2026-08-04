@@ -21,6 +21,13 @@ npm install -g llmouser
 llmouser
 ````
 
+> **macOS:** the app is not notarized, so after downloading macOS claims it is
+> "damaged". It isn't — remove the quarantine flag once and it opens normally:
+>
+> ```bash
+> xattr -d com.apple.quarantine /Applications/LLMouser.app
+> ```
+
 ## Run dev version from git
 ```bash
 git clone https://github.com/nettsundere/llmouser.git
