@@ -13,20 +13,20 @@ to the LLM endpoint you configure. You explore the universe
 
 ## Just install it
 
-Download the app for your platform from
-[Releases](https://github.com/nettsundere/llmouser/releases), or install via npm:
-
-````bash
-npm install -g llmouser
-llmouser
-````
-
+- For best experience Download the app for your platform from
+[Releases](https://github.com/nettsundere/llmouser/releases)
 > **macOS:** the app is not notarized, so after downloading macOS claims it is
 > "damaged". It isn't — remove the quarantine flag once and it opens normally:
 >
 > ```bash
 > xattr -d com.apple.quarantine /Applications/LLMouser.app
 > ```
+
+- or install via npm:
+```bash
+npm install -g llmouser
+llmouser
+```
 
 ## Run dev version from git
 ```bash
