@@ -11,9 +11,20 @@ simulated internet stays coherent. The only real network connection the app make
 to the LLM endpoint you configure. You explore the universe 
 (current by default but you can optionally set other rules - see below)
 
-## Run
+## Just install it
 
+Download the app for your platform from
+[Releases](https://github.com/nettsundere/llmouser/releases), or install via npm:
+
+````bash
+npm install -g llmouser
+llmouser
+````
+
+## Run dev version from git
 ```bash
+git clone https://github.com/nettsundere/llmouser.git
+cd llmouser
 npm install
 npm run dev
 ```

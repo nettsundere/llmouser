@@ -1,0 +1,23 @@
+appId: com.nettsundere.llmouser
+productName: LLMouser
+directories:
+  output: dist
+files:
+  - out/**
+  - assets/**
+  - package.json
+  - "!**/*.map"
+mac:
+  icon: assets/icon-mac.png
+  category: public.app-category.utilities
+  target:
+    - target: dmg
+    - target: zip
+linux:
+  icon: assets/icon.png
+  target:
+    - AppImage
+win:
+  icon: assets/icon.png
+  target:
+    - nsis

@@ -1,23 +1,46 @@
 {
   "name": "llmouser",
   "productName": "LLMouser",
-  "version": "0.1.0",
-  "description": "Electron browser that generates websites with an LLM instead of real HTTP",
+  "version": "1.0.0",
+  "description": "The browser that generates websites with an LLM instead of real HTTP",
   "main": "out/main/index.js",
-  "author": "",
+  "bin": {
+    "llmouser": "bin/llmouser.js"
+  },
+  "files": [
+    "out",
+    "bin",
+    "assets"
+  ],
+  "author": "Vladimir Kiselev",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nettsundere/llmouser.git"
+  },
+  "homepage": "https://github.com/nettsundere/llmouser#readme",
+  "keywords": [
+    "electron",
+    "browser",
+    "llm",
+    "ai",
+    "generative"
+  ],
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test:e2e": "electron-vite build && playwright test"
+    "test:e2e": "electron-vite build && playwright test",
+    "dist": "electron-vite build && node scripts/dist.js",
+    "prepublishOnly": "node scripts/electron-dep.js check && npm run typecheck && npm run build"
   },
   "dependencies": {
+    "electron": "^43.1.0",
     "electron-store": "^8.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.2",
-    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "monocart-coverage-reports": "^2.11.0",
     "typescript": "^5.6.2",
