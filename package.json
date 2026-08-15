@@ -1,7 +1,7 @@
 {
   "name": "llmouser",
   "productName": "LLMouser",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "The browser that generates websites with an LLM instead of real HTTP",
   "main": "out/main/index.js",
   "bin": {
