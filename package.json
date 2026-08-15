@@ -31,7 +31,7 @@
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test:e2e": "electron-vite build && playwright test",
-    "dist": "electron-vite build && node scripts/dist.js",
+    "dist": "electron-vite build && node scripts/dist.js --mac --win",
     "prepublishOnly": "node scripts/electron-dep.js check && npm run typecheck && npm run build"
   },
   "dependencies": {
