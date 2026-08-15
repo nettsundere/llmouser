@@ -14,11 +14,31 @@ function escapeHtml(value: string): string {
  * Echoes the URL, query params and referer, and includes a search form,
  * navigation links and a JS-navigation button to exercise every nav path.
  * A URL containing "throw-error" makes it reject, exercising the error path.
+ * A URL containing "slow" delays the response so tests can cancel mid-flight;
+ * aborting rejects immediately.
  */
 export const mockProvider: Provider = {
-  async generateSite(request: SiteRequest, settings: LlmSettings): Promise<string> {
+  async generateSite(
+    request: SiteRequest,
+    settings: LlmSettings,
+    signal?: AbortSignal
+  ): Promise<string> {
     if (request.url.includes('throw-error')) {
       throw new Error('Mock provider forced error')
+    }
+    if (request.url.includes('slow')) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, 3000)
+        signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer)
+            reject(new DOMException('Aborted', 'AbortError'))
+          },
+          { once: true }
+        )
+      })
     }
     const safeUrl = escapeHtml(request.url)
 

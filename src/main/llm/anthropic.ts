@@ -6,9 +6,14 @@ interface AnthropicResponse {
 }
 
 export const anthropicProvider: Provider = {
-  async generateSite(request: SiteRequest, settings: LlmSettings): Promise<string> {
+  async generateSite(
+    request: SiteRequest,
+    settings: LlmSettings,
+    signal?: AbortSignal
+  ): Promise<string> {
     const res = await fetch(`${settings.endpoint}/v1/messages`, {
       method: 'POST',
+      signal,
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': settings.apiKey,

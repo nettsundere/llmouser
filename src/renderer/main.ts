@@ -46,6 +46,14 @@ interface Tab {
   index: number
   /** Raw generated HTML of the current page — source for Save as PDF. */
   html: string
+  /**
+   * Navigation generation. Bumped by every new navigation and by back/forward,
+   * so an in-flight generation whose result arrives late sees a newer value and
+   * discards itself instead of clobbering the page the user moved to.
+   */
+  navSeq: number
+  /** requestId of the in-flight generation, so it can be aborted in main. */
+  pendingRequestId: number | null
   statusMessage: StatusText
   statusError: boolean
   frame: HTMLIFrameElement
@@ -281,6 +289,8 @@ function createTab(): Tab {
     entries: [],
     index: -1,
     html: '',
+    navSeq: 0,
+    pendingRequestId: null,
     statusMessage: (m) => m.ready,
     statusError: false,
     frame
@@ -290,9 +300,19 @@ function createTab(): Tab {
   return tab
 }
 
+/** Abort the tab's in-flight generation, if any; its late result is discarded. */
+function cancelPending(tab: Tab): void {
+  tab.navSeq++
+  if (tab.pendingRequestId !== null) {
+    window.llmBrowser.cancelNavigate(tab.pendingRequestId)
+    tab.pendingRequestId = null
+  }
+}
+
 function closeTab(tab: Tab): void {
   const index = tabs.indexOf(tab)
   if (index === -1) return
+  cancelPending(tab)
   tabs.splice(index, 1)
   tab.frame.remove()
   if (tabs.length === 0) {
@@ -318,6 +338,8 @@ function visitedUrls(tab: Tab): string[] {
 function showEntry(tab: Tab, index: number): void {
   const entry = tab.entries[index]
   if (!entry) return
+  // Moving through history abandons any generation still in flight.
+  cancelPending(tab)
   tab.index = index
   tab.currentUrl = entry.url
   tab.addressValue = entry.addressValue
@@ -340,19 +362,34 @@ function goForward(tab: Tab): void {
   if (tab.index < tab.entries.length - 1) showEntry(tab, tab.index + 1)
 }
 
+let nextRequestId = 1
+
 async function navigate(tab: Tab, url: string): Promise<void> {
   const input = url.trim()
   if (!input) return
+
+  // A new navigation supersedes whatever is still generating for this tab.
+  cancelPending(tab)
+  const seq = tab.navSeq
+  const requestId = nextRequestId++
+  tab.pendingRequestId = requestId
 
   tab.addressValue = input
   if (tab === active) address.value = input
   setTabStatus(tab, (m) => m.loading(input))
   try {
     const visited = visitedUrls(tab)
-    const html = await window.llmBrowser.navigate(input, {
-      referer: visited[visited.length - 1],
-      history: visited
-    })
+    const html = await window.llmBrowser.navigate(
+      input,
+      {
+        referer: visited[visited.length - 1],
+        history: visited
+      },
+      requestId
+    )
+    // Superseded (new navigation or back/forward) while generating: discard.
+    if (tab.navSeq !== seq) return
+    tab.pendingRequestId = null
     tab.currentUrl = normalizeUrl(input)
     tab.title = extractTitle(html) || tab.currentUrl
     tab.icon = extractIcon(html) ?? letterIcon(tab.currentUrl)
@@ -372,6 +409,9 @@ async function navigate(tab: Tab, url: string): Promise<void> {
     tab.frame.srcdoc = injectBase(injectInterceptor(html), tab.currentUrl)
     setTabStatus(tab, (m) => m.loaded(input))
   } catch (error) {
+    // A cancelled request rejects (abort); the tab already shows its new page.
+    if (tab.navSeq !== seq) return
+    tab.pendingRequestId = null
     tab.frame.classList.remove('has-content')
     tab.frame.srcdoc = ''
     tab.html = ''

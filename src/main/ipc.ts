@@ -8,10 +8,13 @@ import { savePageAsPdf } from './pdf'
 
 const HISTORY_LIMIT = 10
 
+/** In-flight generations by renderer-assigned requestId, abortable via navigate:cancel. */
+const pendingNavigations = new Map<number, AbortController>()
+
 export function registerIpc(): void {
   ipcMain.handle(
     'navigate',
-    async (_event, url: string, context?: NavigateContext): Promise<string> => {
+    async (_event, url: string, context?: NavigateContext, requestId?: number): Promise<string> => {
       const settings = getSettings()
       const provider = getProvider(settings)
 
@@ -23,9 +26,19 @@ export function registerIpc(): void {
         typeof context?.referer === 'string' && context.referer ? context.referer : undefined
 
       const request: SiteRequest = { url: normalizeUrl(url), referer, history }
-      return provider.generateSite(request, settings)
+      const controller = new AbortController()
+      if (typeof requestId === 'number') pendingNavigations.set(requestId, controller)
+      try {
+        return await provider.generateSite(request, settings, controller.signal)
+      } finally {
+        if (typeof requestId === 'number') pendingNavigations.delete(requestId)
+      }
     }
   )
+
+  ipcMain.on('navigate:cancel', (_event, requestId: number) => {
+    pendingNavigations.get(requestId)?.abort()
+  })
 
   ipcMain.handle(
     'page:save-pdf',

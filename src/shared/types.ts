@@ -64,7 +64,9 @@ export interface SavePdfResult {
 
 /** API surface exposed to the renderer via contextBridge (preload). */
 export interface LlmBrowserApi {
-  navigate(url: string, context?: NavigateContext): Promise<string>
+  navigate(url: string, context?: NavigateContext, requestId?: number): Promise<string>
+  /** Abort an in-flight navigate() by its requestId; its promise rejects. */
+  cancelNavigate(requestId: number): void
   /** Render the given page HTML to a PDF file chosen via a save dialog. */
   savePdf(url: string, html: string): Promise<SavePdfResult>
   getSettings(): Promise<PublicSettings>

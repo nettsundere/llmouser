@@ -6,9 +6,14 @@ interface OpenAiResponse {
 }
 
 export const openaiProvider: Provider = {
-  async generateSite(request: SiteRequest, settings: LlmSettings): Promise<string> {
+  async generateSite(
+    request: SiteRequest,
+    settings: LlmSettings,
+    signal?: AbortSignal
+  ): Promise<string> {
     const res = await fetch(`${settings.endpoint}/chat/completions`, {
       method: 'POST',
+      signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${settings.apiKey}`

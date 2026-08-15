@@ -11,7 +11,7 @@ export interface SiteRequest {
 
 export interface Provider {
   /** Generate a complete HTML document for the given request. */
-  generateSite(request: SiteRequest, settings: LlmSettings): Promise<string>
+  generateSite(request: SiteRequest, settings: LlmSettings, signal?: AbortSignal): Promise<string>
 }
 
 export function systemPrompt(universe: string): string {
