@@ -68,7 +68,12 @@ impl Engine {
         let mock = self.mock;
         let sink = self.sink.clone();
         let pending = self.pending.clone();
+        // The task must not start generating until its abort handle is in
+        // `pending`. Otherwise a fast generation (e.g. the mock) can finish and
+        // remove `request` before `start` inserts it, leaving a stale handle.
+        let (registered_tx, registered_rx) = tokio::sync::oneshot::channel();
         let handle = self.runtime.spawn(async move {
+            let _ = registered_rx.await;
             let result = llm::generate(&client, &settings, &site, mock).await;
             pending.lock().expect("pending map").remove(&request);
             sink(EngineEvent::Generated {
@@ -81,6 +86,9 @@ impl Engine {
             .lock()
             .expect("pending map")
             .insert(request, handle.abort_handle());
+        // Registration is done; let the task run (a dropped receiver, e.g. after
+        // an immediate abort, simply makes the await return and the task end).
+        let _ = registered_tx.send(());
     }
 
     /// Abort an in-flight generation; no event is delivered for it.
