@@ -59,22 +59,56 @@ pub fn user_prompt(request: &SiteRequest) -> String {
 /// LLMs often wrap output in ```html fences despite instructions — strip them.
 pub fn strip_fences(text: &str) -> String {
     let trimmed = text.trim();
-    if let Some(rest) = trimmed.strip_prefix("```") {
-        if let Some(end) = rest.rfind("```") {
-            let inner = &rest[..end];
-            // Drop the optional language tag on the opening fence line.
-            let inner = match inner.split_once('\n') {
-                Some((tag, body))
-                    if tag.trim().is_empty() || tag.trim().eq_ignore_ascii_case("html") =>
-                {
-                    body
-                }
-                _ => inner,
-            };
-            return inner.trim().to_string();
-        }
+
+    // Preferred: a fenced code block, possibly preceded by a sentence of prose
+    // ("Here is the HTML code for …"). The opening fence must start a line; the
+    // closing fence may be anywhere.
+    if let Some(after_open) = find_fence_open(trimmed) {
+        let close = trimmed[after_open..].rfind("```").map(|r| after_open + r);
+        return match close {
+            Some(end) => drop_lang(&trimmed[after_open..end]),
+            None => drop_lang(&trimmed[after_open..]),
+        };
     }
-    trimmed.to_string()
+
+    // Fallback: no fence, but prose before the document itself.
+    leading_html(trimmed)
+}
+
+/// Byte offset just past the first ``` fence that starts a line.
+fn find_fence_open(text: &str) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if &bytes[i..i + 3] == b"```" && (i == 0 || bytes[i - 1] == b'\n') {
+            return Some(i + 3);
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Drop the language tag on the opening fence line (`html`, or empty).
+fn drop_lang(inner: &str) -> String {
+    match inner.split_once('\n') {
+        Some((tag, body)) if tag.trim().is_empty() || tag.trim().eq_ignore_ascii_case("html") => {
+            body.trim().to_string()
+        }
+        _ => inner.trim().to_string(),
+    }
+}
+
+/// If the text contains `<!doctype` or `<html`, drop everything before it.
+fn leading_html(text: &str) -> String {
+    let lower = text.to_ascii_lowercase();
+    let start = ["<!doctype", "<html"]
+        .iter()
+        .filter_map(|needle| lower.find(needle))
+        .min();
+    match start {
+        Some(pos) => text[pos..].trim().to_string(),
+        None => text.to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -108,6 +142,25 @@ mod tests {
         assert_eq!(strip_fences("```\n<p>x</p>\n```\n"), "<p>x</p>");
         assert_eq!(strip_fences("  <p>x</p> "), "<p>x</p>");
         assert_eq!(strip_fences("```html<p>y</p>```"), "html<p>y</p>");
+
+        // Prose before the fence is discarded, not shown to the user.
+        let prose = "Here is the HTML code for a Warhammer 40K-themed image search results page.\n\n```html\n<!doctype html><html><body>hi</body></html>\n```";
+        assert_eq!(
+            strip_fences(prose),
+            "<!doctype html><html><body>hi</body></html>"
+        );
+
+        // Prose before a bare document (no fence) is discarded too.
+        assert_eq!(
+            strip_fences("Sure, here you go:\n<!doctype html><html></html>"),
+            "<!doctype html><html></html>"
+        );
+
+        // Unclosed fence still drops the opening fence and language tag.
+        assert_eq!(
+            strip_fences("Intro text.\n```html\n<p>partial"),
+            "<p>partial"
+        );
     }
 
     #[test]

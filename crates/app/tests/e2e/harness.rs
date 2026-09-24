@@ -168,6 +168,21 @@ impl App {
         self.ok(Cmd::Eval { js: js.to_string() })
     }
 
+    /// Like [`eval`](Self::eval) but returns `None` when the webview is not yet
+    /// ready (its creation is asynchronous on Windows). Used by the launch-time
+    /// polling helpers so they retry instead of panicking.
+    pub fn try_eval(&mut self, js: &str) -> Option<String> {
+        let response = self.send(Cmd::Eval { js: js.to_string() });
+        if !response.ok {
+            return None;
+        }
+        match response.value? {
+            Value::String(s) => Some(s),
+            Value::Null => Some(String::new()),
+            other => Some(other.to_string()),
+        }
+    }
+
     pub fn eval_str(&mut self, js: &str) -> String {
         match self.eval(js) {
             Value::String(s) => s,
@@ -184,7 +199,9 @@ impl App {
 
     /// Whether the blank new-tab page is what the webview shows.
     pub fn on_start_page(&mut self) -> bool {
-        self.eval_str("document.body && document.body.dataset.llmouser || ''") == "start"
+        self.try_eval("document.body && document.body.dataset.llmouser || ''")
+            .map(|v| v == "start")
+            .unwrap_or(false)
     }
 
     pub fn page_click(&mut self, id: &str) {
@@ -244,9 +261,8 @@ impl App {
 
     /// Sequence number of the document the webview currently shows.
     pub fn shown_seq(&mut self) -> Option<u64> {
-        self.eval_str("(document.querySelector('meta[name=llmouser-content]') || {}).content || ''")
-            .parse()
-            .ok()
+        self.try_eval("(document.querySelector('meta[name=llmouser-content]') || {}).content || ''")
+            .and_then(|v| v.parse().ok())
     }
 
     /// Wait until the webview shows the document the model says is current.

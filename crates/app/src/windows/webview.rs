@@ -57,12 +57,48 @@ pub fn create_environment() {
 }
 
 pub fn create(env: &ICoreWebView2Environment, parent: HWND, entry: Rc<TabEntry>) {
+    create_attempt(env, parent, entry, 5);
+}
+
+/// One attempt to create the controller. On failure (e.g. the transient
+/// `E_ABORT` WebView2 reports while its browser process is starting) we retry a
+/// few times on the UI thread.
+fn create_attempt(
+    env: &ICoreWebView2Environment,
+    parent: HWND,
+    entry: Rc<TabEntry>,
+    attempts: u32,
+) {
     let tab = entry.tab;
     let env_for_requests = env.clone();
     let handler =
         CreateCoreWebView2ControllerCompletedHandler::create(Box::new(move |error, controller| {
             let Some(controller) = controller else {
-                eprintln!("WebView2 controller failed: {error:?}");
+                eprintln!(
+                    "WebView2 controller failed (attempts left {}): {error:?}",
+                    attempts - 1
+                );
+                if attempts > 1 {
+                    // Only Send data crosses the thread boundary; the UI thread
+                    // re-fetches the environment and the tab's entry.
+                    let parent_addr = parent.0 as isize;
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(250));
+                        app::on_main(move || {
+                            let Some(env) = state().env.borrow().clone() else {
+                                return;
+                            };
+                            if let Some(entry) = app::main_window().entry_for(tab) {
+                                create_attempt(
+                                    &env,
+                                    HWND(parent_addr as *mut _),
+                                    entry,
+                                    attempts - 1,
+                                );
+                            }
+                        });
+                    });
+                }
                 return Ok(());
             };
             unsafe {

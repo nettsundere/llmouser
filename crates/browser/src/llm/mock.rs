@@ -21,6 +21,10 @@ pub enum MockScenario {
     Unauthorized,
     /// URL contains `slow`: the page arrives after a delay so tests can cancel.
     Slow,
+    /// URL contains `fenced`: like a real LLM, the response is a prose preamble
+    /// plus a ```html code fence around the page, so the fence-stripping path
+    /// (and not the prose) reaches the browser.
+    Fenced,
 }
 
 impl MockScenario {
@@ -31,6 +35,8 @@ impl MockScenario {
             MockScenario::Unauthorized
         } else if url.contains("slow") {
             MockScenario::Slow
+        } else if url.contains("fenced") {
+            MockScenario::Fenced
         } else {
             MockScenario::Normal
         }
@@ -53,9 +59,15 @@ pub async fn generate(settings: &Settings, request: &SiteRequest) -> Result<Stri
             })
         }
         MockScenario::Slow => tokio::time::sleep(SLOW_DELAY).await,
-        MockScenario::Normal => {}
+        MockScenario::Normal | MockScenario::Fenced => {}
     }
-    Ok(mock_site(settings, request))
+    let html = mock_site(settings, request);
+    Ok(match MockScenario::for_url(&request.url) {
+        MockScenario::Fenced => crate::prompt::strip_fences(&format!(
+            "Here is the HTML code for the page you requested, complete with navigation and content.\n\n```html\n{html}\n```"
+        )),
+        _ => html,
+    })
 }
 
 /// The page itself (synchronous; also handy for unit tests).
@@ -144,6 +156,10 @@ mod tests {
         assert_eq!(
             MockScenario::for_url("https://x/unauthorized"),
             MockScenario::Unauthorized
+        );
+        assert_eq!(
+            MockScenario::for_url("https://fenced.example"),
+            MockScenario::Fenced
         );
         assert_eq!(MockScenario::for_url("https://a"), MockScenario::Normal);
     }
