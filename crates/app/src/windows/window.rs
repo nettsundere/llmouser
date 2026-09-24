@@ -247,7 +247,6 @@ impl MainWindow {
                     Some(LPARAM(&info as *const _ as isize)),
                 );
             }
-            let _ = ShowWindow(hwnd, SW_SHOW);
             mw.layout();
             mw
         }
@@ -524,32 +523,52 @@ unsafe extern "system" fn address_proc(
 }
 
 unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    // A panic must never cross this `extern "system"` boundary (it would abort).
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        handle_message(hwnd, msg, wparam, lparam)
+    })) {
+        Ok(result) => result,
+        Err(_) => {
+            eprintln!("window procedure panicked on message {msg:#x}");
+            DefWindowProcW(hwnd, msg, wparam, lparam)
+        }
+    }
+}
+
+/// The main window, if it has been registered yet (messages arrive during creation).
+fn window_opt() -> Option<Rc<MainWindow>> {
+    app::state_opt().and_then(|st| st.window.borrow().clone())
+}
+
+unsafe fn handle_message(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     match msg {
         WM_DISPATCH => {
             app::drain_queue();
             LRESULT(0)
         }
         WM_SIZE => {
-            if let Some(w) = state().window.borrow().clone() {
+            if let Some(w) = window_opt() {
                 w.layout();
             }
             LRESULT(0)
         }
         WM_COMMAND => {
-            let id = loword(wparam.0);
-            let code = hiword(wparam.0);
-            command(id, code);
+            if window_opt().is_some() {
+                command(loword(wparam.0), hiword(wparam.0));
+            }
             LRESULT(0)
         }
         WM_NOTIFY => {
             let hdr = &*(lparam.0 as *const NMHDR);
             if hdr.idFrom == ID_TABS as usize && hdr.code == TCN_SELCHANGE {
-                app::main_window().tab_selected();
+                if let Some(w) = window_opt() {
+                    w.tab_selected();
+                }
             }
             LRESULT(0)
         }
         WM_SETFOCUS => {
-            if let Some(entry) = app::main_window().current_entry() {
+            if let Some(entry) = window_opt().and_then(|w| w.current_entry()) {
                 if let Some(controller) = entry.controller.borrow().as_ref() {
                     let _ = controller.MoveFocus(webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
                 }

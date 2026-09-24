@@ -49,6 +49,10 @@ pub fn state() -> Rc<State> {
     STATE.with(|s| s.borrow().clone().expect("app state initialised"))
 }
 
+pub fn state_opt() -> Option<Rc<State>> {
+    STATE.with(|s| s.borrow().clone())
+}
+
 /// Run a closure on the UI thread, from any thread.
 pub fn on_main(f: impl FnOnce() + Send + 'static) {
     QUEUE.lock().expect("dispatch queue").push_back(Box::new(f));
@@ -108,6 +112,12 @@ pub fn run() {
     let window = MainWindow::new();
     MAIN_HWND.store(window.hwnd.0 as isize, Ordering::SeqCst);
     *st.window.borrow_mut() = Some(window.clone());
+    unsafe {
+        let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(
+            window.hwnd,
+            windows::Win32::UI::WindowsAndMessaging::SW_SHOW,
+        );
+    }
     menu::install(st.session.borrow().language());
     let tab = st.session.borrow().browser.active_id();
     window.create_tab(tab);

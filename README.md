@@ -11,9 +11,9 @@ along so the simulated internet stays coherent. The only real network connection
 the app makes is to the LLM endpoint you configure.
 
 Version 3 is a native application written in Rust: AppKit on macOS, GTK4 with
-libadwaita on Linux, Win32 on Windows, each rendering pages with the system
-webview (WebKit, WebKitGTK, WebView2). No Electron, no Node, no bundled browser
-engine: the macOS app is under 4 MB.
+libadwaita on Linux, Win32 on Windows (experimental), each rendering pages with
+the system webview (WebKit, WebKitGTK, WebView2). No Electron, no Node, no
+bundled browser engine: the macOS app is under 4 MB.
 
 ## Install
 
@@ -23,7 +23,7 @@ Download from [Releases](https://github.com/nettsundere/llmouser/releases):
 |---|---|---|
 | macOS 11+ (Apple silicon) | `LLMouser-<version>-macos.dmg` | Not notarized. If macOS says the app is damaged, run `xattr -d com.apple.quarantine /Applications/LLMouser.app` once. |
 | Ubuntu 24.04+ (x64) | `llmouser_<version>_amd64.deb` | `sudo apt install ./llmouser_<version>_amd64.deb` pulls GTK4, libadwaita and WebKitGTK 6.0. |
-| Windows 10/11 (x64) | `LLMouser-<version>-windows-x64.zip` | Unzip and run `LLMouser.exe`. Needs the [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/), present on any up-to-date Windows. |
+| Windows 10/11 (x64) | `LLMouser-<version>-windows-x64.zip` | **Experimental.** Unzip and run `LLMouser.exe`. Needs the [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/), present on any up-to-date Windows. The Windows shell is built and type-checked in CI but not yet verified by hand; report issues. |
 
 Open **Settings** (Cmd/Ctrl+,) and configure your LLM:
 
