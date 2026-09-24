@@ -193,6 +193,7 @@ fn state_info() -> StateInfo {
         address: w.address.text().to_string(),
         status: w.status.text().to_string(),
         status_error: current.map(|t| t.status.is_error()).unwrap_or(false),
+        content_seq: current.map(|t| t.content_seq).unwrap_or(0),
         can_back: w.back.is_sensitive(),
         can_forward: w.forward.is_sensitive(),
         loading: current.map(|t| t.is_loading()).unwrap_or(false),

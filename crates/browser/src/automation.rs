@@ -134,6 +134,10 @@ pub struct StateInfo {
     pub address_placeholder: String,
     /// Tooltips of the toolbar buttons, in order: back, forward, go/stop, settings, new tab.
     pub tooltips: Vec<String>,
+    /// Content sequence of the active tab; the document shown carries the same
+    /// number in its `llmouser-content` meta tag once it is committed.
+    #[serde(default)]
+    pub content_seq: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

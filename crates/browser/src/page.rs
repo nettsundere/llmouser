@@ -56,6 +56,23 @@ pub fn prepare_document(html: &str, base_url: Option<&str>) -> String {
     if let Some(base) = base_url {
         tag.push_str(&format!("<base href=\"{}\">", base.replace('"', "&quot;")));
     }
+    inject_head(html, &tag)
+}
+
+/// Name of the meta tag carrying the tab's content sequence number, so a
+/// shell (or the E2E suite) can tell which document the webview shows.
+pub const CONTENT_META: &str = "llmouser-content";
+
+/// Stamp a document with the content sequence it renders.
+pub fn stamp(html: &str, seq: u64) -> String {
+    inject_head(
+        html,
+        &format!("<meta name=\"{CONTENT_META}\" content=\"{seq}\">"),
+    )
+}
+
+/// Put `tag` at the start of `<head>`, creating one when the page has none.
+fn inject_head(html: &str, tag: &str) -> String {
     if let Some(end) = find_tag_end(html, "head") {
         return format!("{}{}{}", &html[..end], tag, &html[end..]);
     }
@@ -289,6 +306,8 @@ mod tests {
 
         let out = prepare_document("<html><head>", Some("https://q\"uote/"));
         assert!(out.contains("href=\"https://q&quot;uote/\""));
+        assert!(stamp("<html><head></head></html>", 7)
+            .contains("<head><meta name=\"llmouser-content\" content=\"7\">"));
     }
 
     #[test]

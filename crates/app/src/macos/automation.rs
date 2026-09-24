@@ -296,6 +296,7 @@ fn state_info() -> StateInfo {
         address: w.address.stringValue().to_string(),
         status: w.status.stringValue().to_string(),
         status_error: tab.map(|t| t.status.is_error()).unwrap_or(false),
+        content_seq: tab.map(|t| t.content_seq).unwrap_or(0),
         can_back: w.back_item.isEnabled(),
         can_forward: w.forward_item.isEnabled(),
         loading: w.is_loading(),

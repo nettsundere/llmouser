@@ -117,6 +117,7 @@ impl App {
         // Wait for the first window and its start page to be up.
         app.wait_for("first window", |a| !a.state().tabs.is_empty());
         app.wait_for("start page", |a| a.on_start_page());
+        app.wait_committed();
         app
     }
 
@@ -222,9 +223,7 @@ impl App {
                 && !s.status.starts_with("Загрузка")
                 && !s.status.starts_with("正在加载")
         });
-        // The webview needs a moment to commit the new document.
-        std::thread::sleep(Duration::from_millis(150));
-        self.state()
+        self.wait_committed()
     }
 
     pub fn wait_status(&mut self, expected: &str) -> StateInfo {
@@ -232,8 +231,7 @@ impl App {
         self.wait_for(&format!("status {expected:?}"), |a| {
             a.state().status == expected
         });
-        std::thread::sleep(Duration::from_millis(150));
-        self.state()
+        self.wait_committed()
     }
 
     pub fn wait_status_contains(&mut self, part: &str) -> StateInfo {
@@ -241,7 +239,22 @@ impl App {
         self.wait_for(&format!("status containing {part:?}"), |a| {
             a.state().status.contains(&part)
         });
-        std::thread::sleep(Duration::from_millis(150));
+        self.wait_committed()
+    }
+
+    /// Sequence number of the document the webview currently shows.
+    pub fn shown_seq(&mut self) -> Option<u64> {
+        self.eval_str("(document.querySelector('meta[name=llmouser-content]') || {}).content || ''")
+            .parse()
+            .ok()
+    }
+
+    /// Wait until the webview shows the document the model says is current.
+    pub fn wait_committed(&mut self) -> StateInfo {
+        self.wait_for("document to commit", |a| {
+            let expected = a.state().content_seq;
+            a.shown_seq() == Some(expected)
+        });
         self.state()
     }
 
@@ -328,11 +341,13 @@ impl App {
             a.tabs().len() == before + 1 && a.state().address.is_empty()
         });
         self.wait_for("new tab start page", |a| a.on_start_page());
+        self.wait_committed();
     }
 
     pub fn activate_tab(&mut self, index: usize) {
         self.ok(Cmd::ActivateTab { index });
         self.wait_for("tab activation", |a| a.state().active_tab == index);
+        self.wait_committed();
     }
 
     pub fn close_tab(&mut self, index: usize) {

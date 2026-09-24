@@ -211,6 +211,7 @@ fn state_info() -> StateInfo {
         address: get_text(w.address),
         status: get_text(w.status),
         status_error: w.status_error.get(),
+        content_seq: current.map(|t| t.content_seq).unwrap_or(0),
         can_back: unsafe { IsWindowEnabled(w.back).as_bool() },
         can_forward: unsafe { IsWindowEnabled(w.forward).as_bool() },
         loading: current.map(|t| t.is_loading()).unwrap_or(false),

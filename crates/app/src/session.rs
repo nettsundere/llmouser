@@ -166,7 +166,7 @@ impl Session {
     pub fn document_for(&self, tab: TabId, inject_base: bool) -> Option<(String, Option<String>)> {
         let t = self.browser.tab(tab)?;
         let m = self.messages();
-        Some(match &t.content {
+        let (html, base) = match &t.content {
             Content::Empty => (page::start_page(), None),
             Content::Page { url, html } => (
                 page::prepare_document(html, inject_base.then_some(url.as_str())),
@@ -177,7 +177,8 @@ impl Session {
                 message,
                 offer_settings,
             } => (page::error_page(m, url, message, *offer_settings), None),
-        })
+        };
+        Some((page::stamp(&html, t.content_seq), base))
     }
 
     /// The form as the settings dialog should show it (never the key itself).
