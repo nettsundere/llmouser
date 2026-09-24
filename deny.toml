@@ -1,0 +1,27 @@
+# cargo-deny configuration: vulnerabilities, licences and duplicate/untrusted sources.
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+ignore = []
+
+[licenses]
+version = 2
+# MIT-compatible, permissive licences only. No GPL/LGPL/AGPL/SSPL crates: the
+# app is MIT and must stay distributable as such. (On Linux the binary links
+# dynamically to GTK/WebKitGTK, which is permitted for LGPL system libraries.)
+allow = [
+    "MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause",
+    "ISC", "Zlib", "Unicode-3.0", "CDLA-Permissive-2.0", "BSL-1.0", "CC0-1.0", "0BSD",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

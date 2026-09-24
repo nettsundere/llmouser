@@ -1,0 +1,28 @@
+[package]
+name = "llmouser-browser"
+description = "The browser itself, minus pixels: tabs, history, navigation, the LLM-backed internet, settings and translations"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "macros", "net", "io-util"] }
+sys-locale = "0.3"
+
+# TLS: rustls on macOS/Linux; on Windows the OS stack (Schannel), which needs no
+# C toolchain and follows the system certificate store.
+[target.'cfg(not(windows))'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+
+[target.'cfg(windows)'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
+
+[dev-dependencies]
+tempfile = "3"

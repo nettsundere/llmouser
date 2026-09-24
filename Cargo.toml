@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = ["crates/browser", "crates/app", "crates/xtask"]
+
+[workspace.package]
+version = "3.0.0"
+edition = "2021"
+license = "MIT"
+authors = ["Vladimir Kiselev"]
+repository = "https://github.com/nettsundere/llmouser"
+rust-version = "1.85"
+
+[profile.release]
+opt-level = 2
+lto = "thin"
+codegen-units = 4
+strip = true

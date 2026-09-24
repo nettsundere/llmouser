@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=LLMouser
+GenericName=LLM Browser
+Comment=The browser that generates websites with an LLM instead of real HTTP
+Exec=llmouser %U
+Icon=llmouser
+Terminal=false
+Categories=Network;WebBrowser;
+Keywords=browser;llm;ai;
+StartupNotify=true

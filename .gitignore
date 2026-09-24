@@ -1,9 +1,4 @@
-node_modules/
-out/
-dist/
-.coverage-raw/
-test-results/
-playwright-report/
+target/
 *.log
 .DS_Store
 
@@ -11,5 +6,11 @@ playwright-report/
 .env
 .env.*
 *.local
+settings.json
 llm-browser-settings.json
-*.tsbuildinfo
+
+# Build outputs
+/build/
+/dist/
+/packaging/linux/out/
+/packaging/windows/out/

@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  security:
+    name: Security (audit, deny, clippy, fmt)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
+      - run: cargo xtask lint
+
+  test-linux:
+    name: Unit + E2E (Ubuntu, GTK)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev xvfb dbus-x11
+      - run: cargo test -p llmouser-browser
+      - run: xvfb-run -a -s "-screen 0 1600x1000x24" dbus-run-session -- cargo test -p llmouser --test e2e -- --test-threads=1
+        env:
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+          # No user namespaces on CI runners/containers: WebKit's bubblewrap sandbox cannot start.
+          WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: "1"
+          GTK_A11Y: none
+
+  test-macos:
+    name: Unit + E2E (macOS, AppKit)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p llmouser-browser
+      - run: cargo test -p llmouser --test e2e -- --test-threads=1
+
+  test-windows:
+    name: Unit + E2E (Windows, WebView2)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p llmouser-browser
+      - run: cargo test -p llmouser --test e2e -- --test-threads=1
+
+  coverage:
+    name: Coverage (llvm-cov)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: cargo xtask coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
