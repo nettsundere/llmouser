@@ -40,6 +40,9 @@ const STATUS_HEIGHT: i32 = 22;
 
 pub struct TabEntry {
     pub tab: TabId,
+    /// Child window hosting this tab's WebView2 controller. WebView2 allows
+    /// exactly one controller per HWND, so each tab needs its own host window.
+    pub host: HWND,
     pub controller: RefCell<Option<ICoreWebView2Controller>>,
     pub webview: RefCell<Option<ICoreWebView2>>,
     pub loaded_seq: Cell<u64>,
@@ -113,6 +116,8 @@ impl MainWindow {
                 lpszClassName: class_name,
                 hCursor: LoadCursorW(None, IDC_ARROW).unwrap_or_default(),
                 hbrBackground: HBRUSH((COLOR_WINDOW.0 + 1) as usize as *mut _),
+                // 1 = the embedded icon resource id (not a dereferenced pointer).
+                #[allow(clippy::manual_dangling_ptr)]
                 hIcon: LoadIconW(Some(hinstance()), PCWSTR(1 as *const u16)).unwrap_or_default(),
                 ..Default::default()
             };
@@ -195,7 +200,7 @@ impl MainWindow {
                 WS_EX_TOPMOST,
                 w!("tooltips_class32"),
                 None,
-                WS_POPUP | WINDOW_STYLE(TTS_ALWAYSTIP as u32),
+                WS_POPUP | WINDOW_STYLE(TTS_ALWAYSTIP),
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
@@ -321,17 +326,20 @@ impl MainWindow {
                 STATUS_HEIGHT - 4,
                 true,
             );
-            let bounds = RECT {
-                left: 0,
-                top: content_top,
-                right: width,
-                bottom: content_bottom,
-            };
             let current = self.current_tab();
+            let content_height = content_bottom - content_top;
             for entry in self.tabs.borrow().iter() {
+                let visible = current == Some(entry.tab);
+                let _ = MoveWindow(entry.host, 0, content_top, width, content_height, true);
+                let _ = ShowWindow(entry.host, if visible { SW_SHOW } else { SW_HIDE });
                 if let Some(controller) = entry.controller.borrow().as_ref() {
-                    let _ = controller.SetBounds(bounds);
-                    let _ = controller.SetIsVisible(current == Some(entry.tab));
+                    let _ = controller.SetBounds(RECT {
+                        left: 0,
+                        top: 0,
+                        right: width,
+                        bottom: content_height,
+                    });
+                    let _ = controller.SetIsVisible(visible);
                 }
             }
         }
@@ -339,8 +347,26 @@ impl MainWindow {
 
     pub fn create_tab(self: &Rc<Self>, tab: TabId) -> Rc<TabEntry> {
         let m = state().session.borrow().messages();
+        let host = unsafe {
+            CreateWindowExW(
+                WINDOW_EX_STYLE::default(),
+                w!("STATIC"),
+                PCWSTR::null(),
+                WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+                0,
+                0,
+                10,
+                10,
+                Some(self.hwnd),
+                None,
+                Some(hinstance()),
+                None,
+            )
+            .expect("tab host window")
+        };
         let entry = Rc::new(TabEntry {
             tab,
+            host,
             controller: RefCell::new(None),
             webview: RefCell::new(None),
             loaded_seq: Cell::new(u64::MAX),
@@ -370,7 +396,7 @@ impl MainWindow {
             );
         }
         if let Some(env) = state().env.borrow().clone() {
-            webview::create(&env, self.hwnd, entry.clone());
+            webview::create(&env, entry.host, entry.clone());
         }
         self.layout();
         self.focus_address();
@@ -383,7 +409,7 @@ impl MainWindow {
         };
         for entry in self.tabs.borrow().iter() {
             if entry.controller.borrow().is_none() {
-                webview::create(&env, self.hwnd, entry.clone());
+                webview::create(&env, entry.host, entry.clone());
             }
         }
     }
@@ -443,6 +469,9 @@ impl MainWindow {
             unsafe {
                 let _ = controller.Close();
             }
+        }
+        unsafe {
+            let _ = DestroyWindow(entry.host);
         }
         self.tabs.borrow_mut().remove(index);
         unsafe {

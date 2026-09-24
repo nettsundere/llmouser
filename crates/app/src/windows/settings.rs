@@ -56,6 +56,7 @@ pub struct SettingsWindow {
     api_key_placeholder: std::cell::RefCell<String>,
 }
 
+#[allow(clippy::too_many_arguments)]
 unsafe fn control(
     class: PCWSTR,
     text: &str,

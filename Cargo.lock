@@ -1008,7 +1008,7 @@ checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 
 [[package]]
 name = "llmouser"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "block2",
  "dispatch2",
@@ -1032,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "llmouser-browser"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "reqwest",
  "serde",
@@ -2598,7 +2598,7 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "xtask"
-version = "3.0.2"
+version = "3.0.3"
 
 [[package]]
 name = "yoke"

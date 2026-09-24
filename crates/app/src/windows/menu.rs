@@ -244,6 +244,13 @@ pub fn sync_enabled() {
 }
 
 pub fn is_enabled(id: &str) -> bool {
+    // Accelerator-only aliases share the enabled state of their action; they have
+    // no menu item of their own, so GetMenuState would report "not found".
+    let id = match id {
+        "bracket-back" => "back",
+        "bracket-forward" => "forward",
+        other => other,
+    };
     let Some(cmd) = command_id(id) else {
         return false;
     };

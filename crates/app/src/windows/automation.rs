@@ -199,7 +199,13 @@ fn state_info() -> StateInfo {
                     .map(|t| t.display_title(session.messages()))
                     .unwrap_or_default(),
                 active: i == selected,
-                icon: "none".into(),
+                icon: match t {
+                    Some(t) if t.icon.is_some() => "favicon",
+                    Some(t) if !t.url.is_empty() => "letter",
+                    Some(_) => "blank",
+                    None => "none",
+                }
+                .into(),
                 loading: t.map(|t| t.is_loading()).unwrap_or(false),
             }
         })

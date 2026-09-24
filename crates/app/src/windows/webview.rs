@@ -246,7 +246,11 @@ fn decide(tab: TabId, url: &str) -> bool {
         .map(|t| t.url.clone())
         .unwrap_or_default();
     if same_document(&current, url) {
-        return true;
+        // Content loaded via NavigateToString has no real origin, so a fragment
+        // link resolves to a cross-origin URL and would trigger a full (and
+        // blocked) network navigation. Cancel it: the page stays put and no
+        // history entry is added.
+        return false;
     }
     state().session.borrow_mut().open_link(tab, url);
     window::render(tab);

@@ -102,6 +102,7 @@ impl AboutWindow {
             );
             let image = LoadImageW(
                 Some(hinstance()),
+                #[allow(clippy::manual_dangling_ptr)] // 1 = the embedded icon resource id
                 PCWSTR(1 as *const u16),
                 IMAGE_ICON,
                 128,
